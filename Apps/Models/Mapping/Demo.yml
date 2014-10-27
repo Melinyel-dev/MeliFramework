@@ -1,0 +1,11 @@
+Demo:
+	database: melidev
+	table: demo
+	identifiant: id
+	fields:
+		id:
+			type: integer
+		title:
+			type: string
+		date:
+			type: string
