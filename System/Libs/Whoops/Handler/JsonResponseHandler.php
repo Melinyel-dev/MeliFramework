@@ -4,9 +4,9 @@
  * @author Filipe Dobreira <http://github.com/filp>
  */
 
-namespace Whoops\Handler;
-use Whoops\Handler\Handler;
-use Whoops\Exception\Frame;
+namespace System\Libs\Whoops\Handler;
+use System\Libs\Whoops\Handler\Handler;
+use System\Libs\Whoops\Exception\Frame;
 
 /**
  * Catches an exception and converts it to a JSON

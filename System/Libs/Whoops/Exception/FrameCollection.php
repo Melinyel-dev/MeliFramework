@@ -4,8 +4,8 @@
  * @author Filipe Dobreira <http://github.com/filp>
  */
 
-namespace Whoops\Exception;
-use Whoops\Exception\Frame;
+namespace System\Libs\Whoops\Exception;
+use System\Libs\Whoops\Exception\Frame;
 use UnexpectedValueException;
 use IteratorAggregate;
 use ArrayIterator;

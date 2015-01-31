@@ -1,6 +1,6 @@
 <?php
 
-namespace Melidev\System\Helpers;
+namespace System\Helpers;
 
 class Input{
 

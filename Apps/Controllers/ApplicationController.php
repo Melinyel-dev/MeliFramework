@@ -1,8 +1,8 @@
 <?php
 
-namespace Melidev\Apps\Controllers;
+namespace Apps\Controllers;
 
-use Melidev\System\Core\Controller;
+use System\Core\Controller;
 
 class ApplicationController extends Controller{
     

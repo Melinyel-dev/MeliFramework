@@ -1,8 +1,8 @@
 <?php
 
-namespace Melidev\System\Core;
+namespace System\Core;
 
-use Melidev\System\Helpers\Input;
+use System\Helpers\Input;
 
 class Request{
 
@@ -43,14 +43,6 @@ class Request{
 		if($interPos !== false){
 			$this->url = substr($this->url, 0, $interPos);
 		}
-		unset($_GET['q_prm']);
-		if(isset($_GET['page'])){
-			if(is_numeric($_GET['page'])){
-				if($_GET['page'] > 0){
-					$this->page = round($_GET['page']);
-				}
-			}
-		}
 		$this->defineCallMethod();
 		Input::setParams(array_merge($_GET, $_POST));
 	}
@@ -59,26 +51,10 @@ class Request{
         $method = 'GET';
         if(array_key_exists('REQUEST_METHOD', $_SERVER))
           $method = $_SERVER['REQUEST_METHOD'];
+
         if(!in_array($method, ['GET', 'POST', 'DELETE', 'PUT', 'AJAX']))
             $method = 'GET';
-		if($method == "POST"){
-			if(isset($_POST['_method'])){
-				switch ($_POST['_method']) {
-					case 'delete':
-						$method = 'DELETE';
-						break;
-					case 'put':
-						$method = 'PUT';
-						break;
-					case 'ajax':
-						$method = 'AJAX';
-						break;
-					default:
-						break;
-				}
-				unset($_POST['_method']);
-			}
-		}
+
 		$this->callMethod = $method;
 		return $this;
 	}

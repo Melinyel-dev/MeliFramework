@@ -1,6 +1,6 @@
 <?php
 
-namespace Melidev\System\Core;
+namespace System\Core;
 
 class Router{
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Melidev\System\Core;
+namespace System\Core;
 
 class Template
 {
@@ -47,7 +47,7 @@ class Template
             $TemplateFile = VIEWS.$Template_namespace.DS.$Template_ctrl->request->controller.DS.$templatePath.$Template_ext;
         }
         if(!file_exists($TemplateFile)){
-            throw new RuntimeException('Le fichier '.$TemplateFile.' n\'existe pas');
+            throw new \RuntimeException('Le fichier '.$TemplateFile.' n\'existe pas');
         }
         ob_start();
         require $TemplateFile;

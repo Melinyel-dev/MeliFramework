@@ -4,9 +4,9 @@
  * @author Filipe Dobreira <http://github.com/filp>
  */
 
-namespace Whoops\Handler;
-use Whoops\Exception\Inspector;
-use Whoops\Run;
+namespace System\Libs\Whoops\Handler;
+use System\Libs\Whoops\Exception\Inspector;
+use System\Libs\Whoops\Run;
 use Exception;
 
 interface HandlerInterface

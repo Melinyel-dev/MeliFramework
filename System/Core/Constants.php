@@ -20,6 +20,6 @@ define('CACHE_DIR',DYN.DS.'cache');
 define('CSS_DIR',WEBROOT.DS.'css');
 define('JS_DIR',WEBROOT.DS.'js');
 
-define('SITE_ID', $GLOBALS['conf']['site_id']);
+define('SITE_ID', 0);
 
 /*  EOF  */

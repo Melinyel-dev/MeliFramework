@@ -16,13 +16,13 @@
  *
  */
 
-namespace Whoops;
+namespace System\Libs\Whoops;
 
-use Whoops\Run;
-use Whoops\Provider\Zend\ExceptionStrategy;
-use Whoops\Provider\Zend\RouteNotFoundStrategy;
-use Whoops\Handler\JsonResponseHandler;
-use Whoops\Handler\PrettyPageHandler;
+use System\Libs\Whoops\Run;
+use System\Libs\Whoops\Provider\Zend\ExceptionStrategy;
+use System\Libs\Whoops\Provider\Zend\RouteNotFoundStrategy;
+use System\Libs\Whoops\Handler\JsonResponseHandler;
+use System\Libs\Whoops\Handler\PrettyPageHandler;
 use Zend\EventManager\EventInterface;
 use Zend\Console\Request as ConsoleRequest;
 

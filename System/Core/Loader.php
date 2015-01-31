@@ -1,6 +1,6 @@
 <?php
 
-namespace Melidev\System\Core;
+namespace System\Core;
 
 class Loader{
 
@@ -47,7 +47,7 @@ class Loader{
             }
             if(!file_exists($file)){
                 if(!$ignore){
-                    throw new RuntimeException('Le fichier '.$file.' n\'existe pas');
+                    throw new \RuntimeException('Le fichier '.$file.' n\'existe pas');
                 }else{
                     return null;
                 }

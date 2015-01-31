@@ -4,7 +4,7 @@
  * @author Filipe Dobreira <http://github.com/filp>
  */
 
-namespace Whoops\Exception;
+namespace System\Libs\Whoops\Exception;
 use InvalidArgumentException;
 use Serializable;
 

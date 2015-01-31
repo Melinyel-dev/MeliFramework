@@ -4,9 +4,9 @@
  * @author Balázs Németh <zsilbi@zsilbi.hu>
  */
 
-namespace Whoops\Provider\Zend;
+namespace System\Libs\Whoops\Provider\Zend;
 
-use Whoops\Run;
+use System\Libs\Whoops\Run;
 
 use Zend\Mvc\View\Http\ExceptionStrategy as BaseExceptionStrategy;
 use Zend\Mvc\MvcEvent;

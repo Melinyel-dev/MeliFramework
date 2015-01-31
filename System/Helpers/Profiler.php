@@ -1,8 +1,8 @@
 <?php
 
-namespace Melidev\System\Helpers;
+namespace System\Helpers;
 
-use Melidev\System\Core\Controller;
+use System\Core\Controller;
 
 class Profiler{
 
@@ -167,7 +167,7 @@ class Profiler{
     }
 
     public static function displayProfiler($totalTime, $controllerTime){
-        if(self::enabled() && $GLOBALS['conf']['environment'] != 'prod'){
+        if(self::enabled()) {// && $GLOBALS['conf']['environment'] != 'prod'){
             $memoryUsage = number_format ( memory_get_usage() / 1024 , 2 , '.' , ' ' );
             $memoryPeakUsage = number_format ( memory_get_peak_usage() / 1024 , 2 , '.' , ' ' );
 

@@ -4,8 +4,8 @@ function load_hooks($trigger){
     if($GLOBALS['conf']['enable_hooks']){
         foreach ($GLOBALS['hooks'][$trigger] as $hook) {
             extract($hook);
-            if(file_exists($file = HOOKS.DS.$filename)){
-                require_once $file;
+            if(is_file($file = HOOKS.DS.$filename)){
+                require $file;
                 if(isset($class)){
                     if(class_exists($class)){
                         $hook_class = new $class();

@@ -1,6 +1,6 @@
 <?php
 
-use \Melidev\System\Core\Router;
+use \System\Core\Router;
 
 /*
 	TODO : Le système de routes n'incorpore pas encore les droits et le rewriting
@@ -14,9 +14,32 @@ Router::root('welcome#index');
 Router::resources('welcome', [
     'only' => ['index'],			// Seul l'index est disponible sur les appels REST
     'collection' => [
-        'get' => ['custom']			// Une méthode personnalisée est définie en appel GET (/welcome/custom/)
+        'get' => ['json']			// Une méthode personnalisée est définie en appel GET (/welcome/custom/)
     ]
 ]);
 
+Router::resources('json', [
+    'only' => ['index']
+]);
+
+Router::resources('db', [
+    'only' => ['index']
+]);
+
+Router::resources('queries', [
+    'only' => ['index']
+]);
+
+Router::resources('fortunes', [
+    'only' => ['index']
+]);
+
+Router::resources('updates', [
+    'only' => ['index']
+]);
+
+Router::resources('plaintext', [
+    'only' => ['index']
+]);
 
 /* End of file */

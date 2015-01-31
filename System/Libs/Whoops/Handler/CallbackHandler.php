@@ -4,8 +4,8 @@
  * @author Filipe Dobreira <http://github.com/filp>
  */
 
-namespace Whoops\Handler;
-use Whoops\Handler\Handler;
+namespace System\Libs\Whoops\Handler;
+use System\Libs\Whoops\Handler\Handler;
 use InvalidArgumentException;
 
 /**

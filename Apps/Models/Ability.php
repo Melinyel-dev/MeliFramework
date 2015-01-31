@@ -1,8 +1,8 @@
 <?php
 
-namespace Melidev\Apps\Models;
+namespace Apps\Models;
 
-use Melidev\System\Core\CanCan;
+use System\Core\CanCan;
 
 class Ability extends CanCan {
 

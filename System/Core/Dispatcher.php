@@ -1,8 +1,9 @@
 <?php
 
-namespace Melidev\System\Core;
+namespace System\Core;
 
-use Melidev\System\Helpers\Profiler;
+use System\Helpers\Profiler;
+use System\Helpers\Cache;
 
 /**
 * Dispatcher
@@ -16,33 +17,35 @@ class Dispatcher{
 	* Fonction principale du dispatcher
 	* Charge le controller en fonction du routing
 	**/
-	public function __construct(){
+	public function __construct($startExecution){
 		if($GLOBALS['conf']['maintenance'])
 			$this->maintenanceMode();
-		$startExecution = microtime(true)*1000;
-		load_hooks('pre_system');
+		$startExecution *= 1000;
+		Hook::load('pre_system');
 
 		// Chargement de l'objet Request qui contient les paramètres d'appel
 		$this->request = Request::getInstance();
 
+		Profiler::sys_mark('router');
 		// Vérification que le contrôlleur appelé est défini dans les routes et existe
 		if(Router::parse()){
-			load_hooks('pre_controller');
+			Profiler::sys_mark('router');
+			Hook::load('pre_controller');
 
 			// Chargement du contrôlleur
 			$controller = $this->loadController();
-			$this->loadHelper();
+			//$this->loadHelper();
 
 			// Vérification que la méthode appelée est défini dans les routes et existe
 			if(!$this->methodExists($controller, $this->request->callMethod)){
 				$this->error404('Le controller '.$this->request->as.' n\'a pas de méthode '.$this->request->action);
 			}
+			Profiler::sys_mark('ability');
 			$controller->checkAbility();
+			Profiler::sys_mark('ability');
 
-			load_hooks('post_controller_constructor');
+			Hook::load('post_controller_constructor');
 
-	    	$beforeFilter = new Filter();
-	    	$beforeFilter->doBeforeFilter($this->request->params);
 	    	$startController = microtime(true)*1000;
 	    	ob_start();
 
@@ -68,14 +71,17 @@ class Dispatcher{
 			$endRenderingView = microtime(true)*1000;
 	    	$endController = microtime(true)*1000;
 
-			load_hooks('post_controller');
+			Hook::load('post_controller');
 		}else{
+			Profiler::sys_mark('router');
 			$this->error404('Le controller appelé n\'existe pas');
 		}
-		load_hooks('post_system');
+		Hook::load('post_system');
 		$endExecution = microtime(true)*1000;
 		Profiler::rendering(round($endRenderingView - $startRenderingView, 4));
 		Profiler::displayProfiler(round($endExecution - $startExecution, 4), round($endController - $startController, 4));
+		Cache::quit();
+		$controller->database->close();
 	}
 
 	/**
@@ -97,14 +103,35 @@ class Dispatcher{
 	**/
 	private function loadController(){
 
-		if(array_key_exists($this->request->as, $this->request->routes)){
-			$name = "\Melidev\Apps\Controllers\\".$this->request->routes[$this->request->as]['name'];
+		/*if(array_key_exists($this->request->as, $this->request->routes)){
+			$name = "\Apps\Controllers\\".$this->request->routes[$this->request->as]['name'];
+			$file = $this->request->routes[$this->request->as]['file'];
+			if(count($this->request->namespaces) > 0){
+				$namespaces = $this->request->namespaces;
+				$currentNamespace = ucfirst(array_pop($namespaces));
+				$this->loadMainController($namespaces, $currentNamespace);
+			}
+			require $file;
+			return $name::getInstance();
+		}
+		return false;*/
+
+
+		if(array_key_exists($this->request->as, $this->request->routes)) {
+			if(count($this->request->namespaces) > 0){
+				$namespaces = $this->request->namespaces;
+				$currentNamespace = ucfirst(array_pop($namespaces));
+				//$this->loadMainController($namespaces, $currentNamespace);
+			}
+
+			$ns = '\Apps\Controllers\\';
+			foreach ($this->request->namespaces as $value) {
+				$ns .= ucfirst($value).'\\';
+			}
+
+			$name = $ns.$this->request->routes[$this->request->as]['name'];
+
 			if(file_exists($file = $this->request->routes[$this->request->as]['file'])){
-				if(count($this->request->namespaces) > 0){
-					$namespaces = $this->request->namespaces;
-					$currentNamespace = ucfirst(array_pop($namespaces));
-					$this->loadMainController($namespaces, $currentNamespace);
-				}
 				require $file;
 				return $name::getInstance();
 			}
@@ -120,14 +147,12 @@ class Dispatcher{
 			$controllerString = array_ucfirst($namespaces);
 			$controllerString = implode(DS, $controllerString);
 		}
-		if (file_exists($file = CONTROLLERS.$namespaceString.DS.strtolower($namespace).DS.$controllerString.$namespace.'Controller.php')) {
-			if(count($namespaces) > 0){
-				$currentNamespace = ucfirst(array_pop($namespaces));
-				$this->loadMainController($namespaces, $currentNamespace);
-			}
-			require $file;
+		$file = CONTROLLERS.$namespaceString.DS.strtolower($namespace).DS.$controllerString.$namespace.'Controller.php';
+		if(count($namespaces) > 0){
+			$currentNamespace = ucfirst(array_pop($namespaces));
+			$this->loadMainController($namespaces, $currentNamespace);
 		}
-
+		require $file;
 	}
 
 	private function methodExists($controller, $method){
@@ -137,7 +162,7 @@ class Dispatcher{
 				$this->request->params = $outputArray;
 				$this->request->action = strtolower($method).ucfirst($key);
 				$controller->format = $this->request->ext;
-				if(in_array($this->request->action , array_diff(get_class_methods($controller),get_class_methods('\Melidev\System\Core\Controller')))){
+				if(in_array($this->request->action , array_diff(get_class_methods($controller),get_class_methods('\System\Core\Controller')))){
 					return true;
 				}
 			}

@@ -1,12 +1,14 @@
 <?php
 
-namespace Melidev\System\Core;
+namespace System\Core;
 
-use Melidev\System\Helpers\Auth;
-use Melidev\System\Helpers\Input;
-use Melidev\System\Helpers\NoCSRF;
+use System\Helpers\Auth;
+use System\Helpers\Input;
+use System\Helpers\NoCSRF;
 
-use Melidev\Apps\Models\Ability;
+use System\Orm\ERDB;
+
+use Apps\Models\Ability;
 
 class Controller{
 
@@ -17,6 +19,8 @@ class Controller{
 	private $cancan;				// Permet de définir les règles d'accès
 	private $view = null;
 	private $format = null;
+
+	protected $outputMode = 'html';
 
 	public $request;  				// Objet Request
 	public $layout;  				// Layout à utiliser pour rendre la vue
@@ -49,7 +53,6 @@ class Controller{
         if (null === self::$instance) {
             self::$instance = new static();
         }
-
         return self::$instance;
     }
 
@@ -58,15 +61,14 @@ class Controller{
 	**/
 	protected function __construct(){
 		$this->request = Request::getInstance();
-		$this->whoops = new \Whoops();
+		$this->whoops = new Whoops();
 		$this->template = new Template();
 
 		$this->load = new Loader();
 
 		$this->initializeData();
 
-		$this->database = new Database();
-		$GLOBALS['Database'] = $this->database;
+		$this->database = ERDB::getInstance();
 
 		if($this->request->callMethod == 'AJAX'){
 			if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
@@ -117,7 +119,7 @@ class Controller{
 		if(!array_key_exists($this->layout, $GLOBALS['Template']) && $this->layout != 'none')
 			$this->e500('Template : template ('.$this->layout.') is not defined !');
 
-		load_hooks('before_rendering');
+		Hook::load('before_rendering');
 
 		$GLOBALS['ControllerName'] = $this->request->controller;
 
@@ -151,6 +153,14 @@ class Controller{
 	}
 
 	public function displayView(){
+		if($this->outputMode == 'html') {
+			header('Content-Type: text/html; charset=UTF-8');
+		} elseif ($this->outputMode == 'json') {
+			header('Content-Type: application/json; charset=UTF-8');
+		} elseif($this->outputMode == 'text') {
+			header('Content-Type: text/plain; charset=UTF-8');
+		}
+
 		echo $this->renderedView;
 	}
 
@@ -167,9 +177,10 @@ class Controller{
 			$this->initializeData();
 			$this->template->write('title', 'Page introuvable');
 			$this->render('errors/404');
+			$this->renderDisplay();
 			$this->displayView();
 		}else{
-			throw new RuntimeException($message);
+			throw new \RuntimeException($message);
 		}
 		die();
 	}
@@ -184,9 +195,10 @@ class Controller{
 			$this->initializeData();
 			$this->template->write('title', 'Erreur interne du serveur');
 			$this->render('errors/500');
+			$this->renderDisplay();
 			$this->displayView();
 		}else{
-			throw new RuntimeException($message);
+			throw new \RuntimeException($message);
 		}
 		die();
 	}
@@ -199,6 +211,7 @@ class Controller{
 		$this->data = [];
 		$this->initializeData();
 		$this->render('errors/maintenance');
+		$this->renderDisplay();
 		$this->displayView();
 		die();
 	}
@@ -212,8 +225,9 @@ class Controller{
 	}
 
 	public function checkAbility(){
-		if(property_exists($this, 'authorize') && $GLOBALS['conf']['cancan']['enabled'])
+		if(property_exists($this, 'authorize') && $GLOBALS['conf']['cancan']['enabled']) {
 			$this->cancan = new Ability(Auth::user());
+		}
 	}
 
 	public function InitData($elem, $params){

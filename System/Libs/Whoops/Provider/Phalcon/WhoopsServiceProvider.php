@@ -4,10 +4,10 @@
  * @author Filipe Dobreira <http://github.com/filp>
  */
 
-namespace Whoops\Provider\Phalcon;
+namespace System\Libs\Whoops\Provider\Phalcon;
 
-use Whoops\Run;
-use Whoops\Handler\PrettyPageHandler;
+use System\Libs\Whoops\Run;
+use System\Libs\Whoops\Handler\PrettyPageHandler;
 use Phalcon\DI;
 use Phalcon\DI\Exception;
 

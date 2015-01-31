@@ -7,12 +7,14 @@
         <link rel="canonical" href="<?=$_SERVER['REQUEST_URI']?>">
 
         <meta property="og:url" content="<?=$_SERVER['REQUEST_URI']?>" />
-        <meta property="og:title" content="MeliFramwork" />
+        <meta property="og:title" content="MeliFramework" />
         <meta property="og:site_name" content="<?=$GLOBALS['conf']['display_name']?>"/>
 
         <link rel="icon" type="image/png" href="/img/favicon.png">
 
-        <title>Template MeliFramwork</title>
+        <link rel="stylesheet" href="/css/style.css" />
+
+        <title>Template MeliFramework</title>
 </head>
 <body>
     <?=$content?>

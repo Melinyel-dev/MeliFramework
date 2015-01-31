@@ -1,30 +1,36 @@
 <?php
 
-namespace Melidev\Apps\Models;
+namespace Apps\Models;
 
-use Melidev\System\Orm\EasyRecord;
+use System\Orm\EasyRecord;
 
 class Demo extends EasyRecord {
-    protected static $database;
-    protected static $table;
-    protected static $identifiant;
-    protected static $mapping;
-    protected static $validations     = [];
-    protected static $scopes          = [];
-    protected static $defaultScopes   = [];
+
+    protected static $mappingConfig = [
+        'database' => 'melidev',
+        'table' => 'demo',
+        'identifiant' => 'id',
+        'fields' => [
+            'id' => [
+                'type' => 'integer'
+            ],
+            'title' => [
+                'type' => 'string'
+            ],
+            'date' => [
+                'type' => 'string'
+            ]
+        ]
+    ];
 
     #####################################
     # Cache
 
-    protected static $cacheActivation = 'full';
-    protected static $cacheTime       = 720;
-    protected static $cacheFields     = [];
+    protected static $cacheActivation = 'off';
+    protected static $cacheTime       = 0;
 
     #####################################
-    # Securité
-
-    protected static $attrAccessible  = [];
-    protected static $attrAccessor    = [];
+    # Liaisons
 
     protected static $hasAndBelongsToMany = [];
     protected static $belongsTo = [];
@@ -33,24 +39,9 @@ class Demo extends EasyRecord {
     #####################################
     # Callbacks
 
-    protected static $beforeValidation = [];
-    protected static $afterValidation  = [];
-    protected static $beforeSave       = [];
-    protected static $beforeCreate     = [];
-    protected static $beforeUpdate     = [];
-    protected static $afterCreate      = [];
-    protected static $afterUpdate      = [];
-    protected static $afterSave        = [];
-    protected static $beforeDelete     = [];
-    protected static $afterDelete      = [];
-
     #####################################
     # Callbacks Méthodes
 
-    #####################################
-    # Validations
-
-    #####################################    
 }
 
 

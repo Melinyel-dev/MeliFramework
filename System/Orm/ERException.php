@@ -1,8 +1,10 @@
 <?php
 
-namespace Melidev\System\Orm;
+namespace System\Orm;
 
-class EasyRecordException extends \Exception{
+use Exception;
+
+class ERException extends Exception{
 
     public function __construct($message, $code = 0, Exception $previous = null) {
         switch ($code) {
@@ -13,7 +15,7 @@ class EasyRecordException extends \Exception{
                 $message = 'ReadOnly::Error '.$message;
                 break;
         }
-        parent::__construct($message, 8, $previous);
+        parent::__construct($message, 0, $previous);
     }
 
     public function __toString() {

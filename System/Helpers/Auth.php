@@ -1,6 +1,6 @@
 <?php
 
-namespace Melidev\System\Helpers;
+namespace System\Helpers;
 
 class Auth{
 
@@ -50,10 +50,14 @@ class Auth{
      * Retour l'utilisateur actuellement connecté ou null
      */
     public static function user(){
-        if(self::check())
-            return $GLOBALS['conf']['auth']['class']::query()->find(Session::get('current_user'));
-        else
+        if(self::check()) {
+            if(!isset($GLOBALS['current_user'])) {
+                $GLOBALS['current_user'] = $GLOBALS['conf']['auth']['class']::query()->find(Session::get('current_user'));
+            }
+            return $GLOBALS['current_user'];
+        } else {
             return false;
+        }
     }
 
     /**

@@ -1,11 +1,11 @@
 <?php
 
-namespace Melidev\System\Core;
+namespace System\Core;
 
-use Melidev\System\Helpers\ArrayHelper;
-use Melidev\System\Helpers\Auth;
-use Melidev\System\Helpers\Notice;
-use Melidev\System\Helpers\Redirect;
+use System\Helpers\ArrayHelper;
+use System\Helpers\Auth;
+use System\Helpers\Notice;
+use System\Helpers\Redirect;
 
 class CanCan {
 
@@ -31,7 +31,7 @@ class CanCan {
 
     protected function can($right, $object) {
         if (!array_key_exists($right, $this->authorizations)) {
-            throw new RuntimeException('CanCan::Ability : "'.$right.'" n\'est pas un droit valide');
+            throw new \RuntimeException('CanCan::Ability : "'.$right.'" n\'est pas un droit valide');
         }
         $this->authorizations[$right][] = $object;
     }
@@ -64,7 +64,7 @@ class CanCan {
         }elseif (in_array($method, $this->destroyableMethods)) {
             $methodType = 'destroy';
         }else{
-            throw new RuntimeException('CanCan::Ability : "'.$method.'" n\'est pas catégorisée');
+            throw new \RuntimeException('CanCan::Ability : "'.$method.'" n\'est pas catégorisée');
         }
 
         if (!in_array($object, $this->authorizations[$methodType]) && !in_array($object, $this->authorizations['manage']) && !in_array('all', $this->authorizations[$methodType]) && !in_array('all', $this->authorizations['manage'])) {

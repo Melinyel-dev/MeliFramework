@@ -4,9 +4,9 @@
  * @author Filipe Dobreira <http://github.com/filp>
  */
 
-namespace Whoops\Exception;
-use Whoops\Exception\FrameCollection;
-use Whoops\Exception\ErrorException;
+namespace System\Libs\Whoops\Exception;
+use System\Libs\Whoops\Exception\FrameCollection;
+use System\Libs\Whoops\Exception\ErrorException;
 use Exception;
 
 class Inspector

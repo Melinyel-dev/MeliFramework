@@ -1,8 +1,16 @@
 <?php
 
-namespace Melidev\System\Helpers;
+namespace System\Helpers;
 
 class Session{
+
+    public static function start() {
+        session_start();
+    }
+
+    public static function destroy() {
+        session_destroy();
+    }
 
     /**
      * Ajoute une variable dans la session
@@ -60,7 +68,7 @@ class Session{
      * @param  [type]  $key nom de la variable
      */
     public static function has($key){
-        return array_key_exists($key, $_SESSION);
+        return isset($_SESSION[$key]);
     }
 
     /**

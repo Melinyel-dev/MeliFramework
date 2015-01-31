@@ -1,9 +1,13 @@
 <?php
 
-namespace Melidev\System\Orm;
+namespace System\Orm;
 
+use ArrayAccess;
+use Countable;
+use IteratorAggregate;
+use Orb\Helpers\Erreur;
 
-class ErreurManager implements \IteratorAggregate, \ArrayAccess, \Countable {
+class ERErreurManager implements IteratorAggregate, ArrayAccess, Countable {
 
     protected $erreurs = [];
 
@@ -15,7 +19,7 @@ class ErreurManager implements \IteratorAggregate, \ArrayAccess, \Countable {
     }
 
     public function getIterator() {
-        return new ArrayIterator($this->erreurs);
+        return new \ArrayIterator($this->erreurs);
     }
 
     public function offsetSet($offset, $value) {

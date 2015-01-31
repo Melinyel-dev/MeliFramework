@@ -1,8 +1,8 @@
 <?php
 
-namespace Melidev\System\Core;
+namespace System\Core;
 
-use Melidev\System\Helpers\Profiler;
+use System\Helpers\Profiler;
 
 class Database {
 	private $server;
@@ -46,49 +46,49 @@ class Database {
 		}
 	}
 
-        public function query() {
-                $args = func_get_args();
-                if(count($args) == 0) {
-                        $this->currentQuery = new Query();
-                        return $this->currentQuery;
-                } elseif(count($args) == 1 || count($args) == 2) {
-                        $this->currentQuery = $this->lastQuery = $args[0];
-                        return $this->exec(array_key_exists(1, $args) ? $args[1] : null);
-                }
-                throw new mysqli_sql_exception("Database::query() expect 0 or 2 arguments", 1);
-                return false;
-        }
+    public function query() {
+            $args = func_get_args();
+            if(count($args) == 0) {
+                    $this->currentQuery = new Query();
+                    return $this->currentQuery;
+            } elseif(count($args) == 1 || count($args) == 2) {
+                    $this->currentQuery = $this->lastQuery = $args[0];
+                    return $this->exec(array_key_exists(1, $args) ? $args[1] : null);
+            }
+            throw new mysqli_sql_exception("Database::query() expect 0 or 2 arguments", 1);
+            return false;
+    }
 
-        public function exec($bindParam) {
-                if(is_object($this->currentQuery) && get_class($this->currentQuery) == 'Query') {
-                        $startTimeQuery = microtime(true) * 1000;
-                        $this->lastQuery = $this->currentQuery->get();
-                        $this->queryResult = $result = $this->connexion->query($this->lastQuery);
-                        $timeQuery = (microtime(true) * 1000) - $startTimeQuery;
-                        Profiler::query([$this->lastQuery, $time_query]);
-                } else {
-                        $startTimeQuery = microtime(true) * 1000;
-                        if($bindParam){
-                                $result = $stmt = $this->connexion->prepare($this->currentQuery);
-                                if($stmt){
-                                        if($bindParam->hasValues())
-                                        call_user_func_array(array($stmt, 'bind_param'), $bindParam->get());
-                                $result = $stmt->execute();
-                                        $this->queryResult = $stmt->get_result();
-                                }
-                        }else{
-                                $this->queryResult = $result = $this->connexion->query($this->currentQuery);
-                        }
-                        $timeQuery = (microtime(true) * 1000) - $startTimeQuery;
-                        Profiler::query([$this->currentQuery, $timeQuery]);
-                }
-                if($result !== false) {
-                        return new SQLResult($this->queryResult);
-                } else {
-                throw new mysqli_sql_exception("MySQL error in <br>".$_SERVER["PHP_SELF"]."<br>on ".$GLOBALS['conf']['display_name']."<br>".$this->connexion->error."<br><br>request : ".lastRequest(), $this->connexion->errno);
-                        return false;
-                }
-        }
+    public function exec($bindParam) {
+            if(is_object($this->currentQuery) && get_class($this->currentQuery) == 'Query') {
+                    $startTimeQuery = microtime(true) * 1000;
+                    $this->lastQuery = $this->currentQuery->get();
+                    $this->queryResult = $result = $this->connexion->query($this->lastQuery);
+                    $timeQuery = (microtime(true) * 1000) - $startTimeQuery;
+                    Profiler::query([$this->lastQuery, $time_query]);
+            } else {
+                    $startTimeQuery = microtime(true) * 1000;
+                    if($bindParam){
+                            $result = $stmt = $this->connexion->prepare($this->currentQuery);
+                            if($stmt){
+                                    if($bindParam->hasValues())
+                                    call_user_func_array(array($stmt, 'bind_param'), $bindParam->get());
+                            $result = $stmt->execute();
+                                    $this->queryResult = $stmt->get_result();
+                            }
+                    }else{
+                            $this->queryResult = $result = $this->connexion->query($this->currentQuery);
+                    }
+                    $timeQuery = (microtime(true) * 1000) - $startTimeQuery;
+                    Profiler::query([$this->currentQuery, $timeQuery]);
+            }
+            if($result !== false) {
+                    return new SQLResult($this->queryResult);
+            } else {
+            throw new mysqli_sql_exception("MySQL error in <br>".$_SERVER["PHP_SELF"]."<br>on ".$GLOBALS['conf']['display_name']."<br>".$this->connexion->error."<br><br>request : ".lastRequest(), $this->connexion->errno);
+                    return false;
+            }
+    }
 
 	public function close() {
 		$this->connexion->close();

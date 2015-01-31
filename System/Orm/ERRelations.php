@@ -1,8 +1,10 @@
 <?php
 
-namespace Melidev\System\Orm;
+namespace System\Orm;
 
-class EasyRecordRelations
+use Orb\Helpers\Text;
+
+class ERRelations
 {
 
     public function __get($key)
@@ -46,7 +48,7 @@ class EasyRecordRelations
     {
         foreach ($this->hasAndBelongsToManyToRemove as $concatTable => $todo) {
             foreach ($todo as $idHasAndBelongsToMany => $requestHasAndBelongsToMany) {
-                $GLOBALS['Database']->query('DELETE FROM '.$requestHasAndBelongsToMany['concatTable'].' WHERE '.$requestHasAndBelongsToMany['thisId'].' = "'.$model->getIdentifierValue().'" AND '.$requestHasAndBelongsToMany['objectId'].' = "'.$requestHasAndBelongsToMany['objectValue'].'"');
+                ERDB::getInstance()->query('DELETE FROM '.$requestHasAndBelongsToMany['concatTable'].' WHERE '.$requestHasAndBelongsToMany['thisId'].' = "'.$model->getIdentifierValue().'" AND '.$requestHasAndBelongsToMany['objectId'].' = "'.$requestHasAndBelongsToMany['objectValue'].'"');
             }
         }
     }
@@ -55,7 +57,7 @@ class EasyRecordRelations
     {
         foreach ($this->hasAndBelongsToManyToAdd as $concatTable => $todo) {
             foreach ($todo as $idHasAndBelongsToMany => $requestHasAndBelongsToMany) {
-                $GLOBALS['Database']->query('INSERT INTO '.$requestHasAndBelongsToMany['concatTable'].' ('.$requestHasAndBelongsToMany['thisId'].', '.$requestHasAndBelongsToMany['objectId'].') VALUES ("'.$model->getIdentifierValue().'", "'.$requestHasAndBelongsToMany['objectValue'].'")');
+                ERDB::getInstance()->query('INSERT INTO '.$requestHasAndBelongsToMany['concatTable'].' ('.$requestHasAndBelongsToMany['thisId'].', '.$requestHasAndBelongsToMany['objectId'].') VALUES ("'.$model->getIdentifierValue().'", "'.$requestHasAndBelongsToMany['objectValue'].'")');
             }
         }
     }
@@ -98,7 +100,7 @@ class EasyRecordRelations
     protected function hasMany($key, $model, $alias)
     {
         $string = ucfirst($key);
-        $hasMany = $string;
+        $hasMany = $model->getNamespace().$string;
         if ($hasMany[strlen($hasMany)-1] == 's')
             $hasMany = substr($hasMany,0,strlen($hasMany)-1);
         $whereExpr = null;
@@ -107,7 +109,7 @@ class EasyRecordRelations
         if (array_key_exists($string, $model::hasMany())) {
             $infosArray = $model::hasMany()[$string];
             if (array_key_exists('class_name', $infosArray))
-                $hasMany = $infosArray['class_name'];
+                $hasMany = $model->getNamespace().$infosArray['class_name'];
             if (array_key_exists('inverse_of', $infosArray))
                 $infosArray = $hasMany::belongsTo()[$infosArray['inverse_of']];
             if (array_key_exists('foreign_key', $infosArray))
@@ -126,16 +128,16 @@ class EasyRecordRelations
                 $whereExpr .= ' '.$cleType.' = "'.get_class($model).'"';
             }
             if (array_key_exists('through', $model::hasMany()[$string])) {
-                $through = $model::hasMany()[$string]['through'];
+                $through = $model->getNamespace().$model::hasMany()[$string]['through'];
                 if ($through[strlen($through)-1] == 's')
                     $through = substr($through,0,strlen($through)-1);
-                $belongsTo     = get_class($model);
+                $belongsTo     = $model->getNamespace().get_class($model);
                 if (array_key_exists($belongsTo, $through::belongsTo())) {
                     $infosArray = $through::belongsTo()[$belongsTo];
                     if (array_key_exists('foreign_key', $infosArray))
                         $cleEtrangere = $infosArray['foreign_key'];
                     if (array_key_exists('class_name', $infosArray))
-                        $belongsTo = $infosArray['class_name'];
+                        $belongsTo = $model->getNamespace().$infosArray['class_name'];
                     if (!isset($cleEtrangere) && array_key_exists('inverse_of', $infosArray))
                         $cleEtrangere = $belongsTo::hasMany()[$infosArray['inverse_of']]['foreign_key'];
                 }
@@ -143,14 +145,14 @@ class EasyRecordRelations
                     $cleEtrangere = $model::getIdentifier(false);
                 if (in_array($hasMany, $through::belongsTo()) || array_key_exists($hasMany, $through::belongsTo())) {
                     if (array_key_exists($hasMany, $through::belongsTo()) && array_key_exists('class_name', $through::belongsTo()[$hasMany]))
-                        $hasMany = $through::belongsTo()[$hasMany]['class_name'];
+                        $hasMany = $model->getNamespace().$through::belongsTo()[$hasMany]['class_name'];
                     $throughs = $through.'s';
                 } elseif (in_array($hasMany.'s', $through::hasMany()) || array_key_exists($hasMany.'s', $through::hasMany())) {
                     if (array_key_exists($hasMany.'s', $through::hasMany()) && array_key_exists('class_name', $through::hasMany()[$hasMany.'s']))
-                        $hasMany = $through::hasMany()[$hasMany.'s']['class_name'];
+                        $hasMany = $model->getNamespace().$through::hasMany()[$hasMany.'s']['class_name'];
                     $throughs = $through;
                 } else
-                    throw new EasyRecordException('EasyRecord::joinsIncludes() parameter 1 is not a known relationship or incorrectly defined', 1);
+                    throw new ERException('EasyRecord::joinsIncludes() parameter 1 is not a known relationship or incorrectly defined', 1);
                 $objects = $hasMany::
                       alias($alias)
                     ->joins($throughs)
@@ -173,14 +175,14 @@ class EasyRecordRelations
     protected function hasOne($key, $model, $alias)
     {
         $string = ucfirst($key);
-        $hasOne = $string;
+        $hasOne = $model->getNamespace().$string;
         if (!array_key_exists($key, $this->storedHasOne)) {
             if (array_key_exists($string, $model::hasOne())) {
                 $infosArray = $model::hasOne()[$string];
                 if (array_key_exists('foreign_key', $infosArray))
                     $cleEtrangere = $infosArray['foreign_key'];
                 if (array_key_exists('class_name', $infosArray))
-                    $hasOne = $infosArray['class_name'];
+                    $hasOne = $model->getNamespace().$infosArray['class_name'];
                 if (!isset($cleEtrangere) && array_key_exists('inverse_of', $infosArray))
                     $cleEtrangere = $hasOne::belongsTo()[$infosArray['inverse_of']]['foreign_key'];
             }
@@ -204,7 +206,7 @@ class EasyRecordRelations
     protected function hasAndBelongsToMany($key, $model, $alias)
     {
         $string = ucfirst($key);
-        $hasAndBelongsToMany = $string;
+        $hasAndBelongsToMany = $model->getNamespace().$string;
         if ($hasAndBelongsToMany[strlen($hasAndBelongsToMany)-1] == 's')
             $hasAndBelongsToMany = substr($hasAndBelongsToMany,0,strlen($hasAndBelongsToMany)-1);
         $whereExpr           = null;
@@ -214,7 +216,7 @@ class EasyRecordRelations
         if (array_key_exists($string, $model::hasAndBelongsToMany())) {
             $infosArray = $model::hasAndBelongsToMany()[$string];
             if (array_key_exists('class_name', $infosArray))
-                $hasAndBelongsToMany = $infosArray['class_name'];
+                $hasAndBelongsToMany = $model->getNamespace().$infosArray['class_name'];
             if (array_key_exists('inverse_of', $infosArray))
                 $infosArray = $hasAndBelongsToMany::hasAndBelongsToMany()[$infosArray['inverse_of']];
             if (array_key_exists('association_foreign_key', $infosArray))
@@ -276,13 +278,13 @@ class EasyRecordRelations
     protected function belongsTo($key, $model, $alias)
     {
         $string = ucfirst($key);
-        $belongsTo = $string;
+        $belongsTo = $model->getNamespace().$string;
         if (array_key_exists($string, $model::belongsTo())) {
             $infosArray = $model::belongsTo()[$string];
             if (array_key_exists('foreign_key', $infosArray))
                 $cleEtrangere = $infosArray['foreign_key'];
             if (array_key_exists('class_name', $infosArray))
-                $belongsTo = $infosArray['class_name'];
+                $belongsTo = $model->getNamespace().$infosArray['class_name'];
             if (!isset($cleEtrangere) && array_key_exists('inverse_of', $infosArray))
                 $cleEtrangere = $belongsTo::hasMany()[$infosArray['inverse_of']]['foreign_key'];
             if (array_key_exists('polymorphic', $infosArray)) {
@@ -322,13 +324,13 @@ class EasyRecordRelations
 
     public static function setBelongsTo($string, $value, $model)
     {
-        $belongsTo = $string;
+        $belongsTo = $model->getNamespace().$string;
         if (array_key_exists($string, $model::belongsTo())) {
             $infosArray = $model::belongsTo()[$string];
             if (array_key_exists('foreign_key', $infosArray))
                 $cleEtrangere = $infosArray['foreign_key'];
             if (array_key_exists('class_name', $infosArray))
-                $belongsTo = $infosArray['class_name'];
+                $belongsTo = $model->getNamespace().$infosArray['class_name'];
             if (!isset($cleEtrangere) && array_key_exists('inverse_of', $infosArray))
                 $cleEtrangere = $belongsTo::hasMany()[$infosArray['inverse_of']]['foreign_key'];
             if (array_key_exists('polymorphic', $infosArray)) {
@@ -340,6 +342,20 @@ class EasyRecordRelations
         if (!isset($cleEtrangere))
             $cleEtrangere = $belongsTo::getIdentifier();
         $model->$cleEtrangere = $value->getIdentifierValue();
+    }
+
+    public static function getForeignKeys($relation) {
+        $keys = [];
+
+        foreach ($relation as $value) {
+            if(is_array($value) && isset($value['foreign_key'])) {
+                $keys[] = $value['foreign_key'];
+            } elseif (is_string($value)) {
+                $keys[] = 'CLEF_'.Text::camelToUnderscore($value);
+            }
+        }
+
+        return $keys;
     }
 }
 

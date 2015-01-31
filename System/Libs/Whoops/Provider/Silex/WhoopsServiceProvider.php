@@ -4,9 +4,9 @@
  * @author Filipe Dobreira <http://github.com/filp>
  */
 
-namespace Whoops\Provider\Silex;
-use Whoops\Run;
-use Whoops\Handler\PrettyPageHandler;
+namespace System\Libs\Whoops\Provider\Silex;
+use System\Libs\Whoops\Run;
+use System\Libs\Whoops\Handler\PrettyPageHandler;
 use Silex\ServiceProviderInterface;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;

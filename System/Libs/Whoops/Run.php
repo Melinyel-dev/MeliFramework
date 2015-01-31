@@ -4,12 +4,12 @@
  * @author Filipe Dobreira <http://github.com/filp>
  */
 
-namespace Whoops;
-use Whoops\Handler\HandlerInterface;
-use Whoops\Handler\Handler;
-use Whoops\Handler\CallbackHandler;
-use Whoops\Exception\Inspector;
-use Whoops\Exception\ErrorException;
+namespace System\Libs\Whoops;
+use System\Libs\Whoops\Handler\HandlerInterface;
+use System\Libs\Whoops\Handler\Handler;
+use System\Libs\Whoops\Handler\CallbackHandler;
+use System\Libs\Whoops\Exception\Inspector;
+use System\Libs\Whoops\Exception\ErrorException;
 use InvalidArgumentException;
 use Exception;
 
@@ -104,10 +104,10 @@ class Run
         if(!$this->isRegistered) {
             // Workaround PHP bug 42098
             // https://bugs.php.net/bug.php?id=42098
-            class_exists('\\Whoops\\Exception\\ErrorException');
-            class_exists('\\Whoops\\Exception\\FrameCollection');
-            class_exists('\\Whoops\\Exception\\Frame');
-            class_exists('\\Whoops\\Exception\\Inspector');
+            class_exists('\\System\\Libs\\Whoops\\Exception\\ErrorException');
+            class_exists('\\System\\Libs\\Whoops\\Exception\\FrameCollection');
+            class_exists('\\System\\Libs\\Whoops\\Exception\\Frame');
+            class_exists('\\System\\Libs\\Whoops\\Exception\\Inspector');
 
             set_error_handler(array($this, self::ERROR_HANDLER));
             set_exception_handler(array($this, self::EXCEPTION_HANDLER));

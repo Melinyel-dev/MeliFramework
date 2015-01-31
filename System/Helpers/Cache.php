@@ -1,6 +1,6 @@
 <?php
 
-namespace Melidev\System\Helpers;
+namespace System\Helpers;
 
 class Cache{
     private static $localCache = [];
@@ -139,6 +139,12 @@ class Cache{
             return true;
         }
         return false;
+    }
+
+    public static function quit() {
+        if(self::available()) {
+            $GLOBALS['Memcache']->quit();
+        }
     }
 }
 
