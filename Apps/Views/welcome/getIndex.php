@@ -1,5 +1,12 @@
 <header>
-	<nav>
+
+	<!-- Menu mobile -->
+        <a>
+          <div class="burger"></div>
+        </a>
+        <!-- Menu mobile -->
+
+	<nav id="desktop">
 		<div class="column40 rightTxt sideMenu">
         	<a href="#">Documentation</a>
         	<a href="#">Communautée</a>
