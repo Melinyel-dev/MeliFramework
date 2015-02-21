@@ -109,7 +109,7 @@ class ERRelations
         if (array_key_exists($string, $model::hasMany())) {
             $infosArray = $model::hasMany()[$string];
             if (array_key_exists('class_name', $infosArray))
-                $hasMany = $model->getNamespace().$infosArray['class_name'];
+                $hasMany = $infosArray['class_name'];
             if (array_key_exists('inverse_of', $infosArray))
                 $infosArray = $hasMany::belongsTo()[$infosArray['inverse_of']];
             if (array_key_exists('foreign_key', $infosArray))
@@ -137,7 +137,7 @@ class ERRelations
                     if (array_key_exists('foreign_key', $infosArray))
                         $cleEtrangere = $infosArray['foreign_key'];
                     if (array_key_exists('class_name', $infosArray))
-                        $belongsTo = $model->getNamespace().$infosArray['class_name'];
+                        $belongsTo = $infosArray['class_name'];
                     if (!isset($cleEtrangere) && array_key_exists('inverse_of', $infosArray))
                         $cleEtrangere = $belongsTo::hasMany()[$infosArray['inverse_of']]['foreign_key'];
                 }
@@ -145,11 +145,11 @@ class ERRelations
                     $cleEtrangere = $model::getIdentifier(false);
                 if (in_array($hasMany, $through::belongsTo()) || array_key_exists($hasMany, $through::belongsTo())) {
                     if (array_key_exists($hasMany, $through::belongsTo()) && array_key_exists('class_name', $through::belongsTo()[$hasMany]))
-                        $hasMany = $model->getNamespace().$through::belongsTo()[$hasMany]['class_name'];
+                        $hasMany = $through::belongsTo()[$hasMany]['class_name'];
                     $throughs = $through.'s';
                 } elseif (in_array($hasMany.'s', $through::hasMany()) || array_key_exists($hasMany.'s', $through::hasMany())) {
                     if (array_key_exists($hasMany.'s', $through::hasMany()) && array_key_exists('class_name', $through::hasMany()[$hasMany.'s']))
-                        $hasMany = $model->getNamespace().$through::hasMany()[$hasMany.'s']['class_name'];
+                        $hasMany = $through::hasMany()[$hasMany.'s']['class_name'];
                     $throughs = $through;
                 } else
                     throw new ERException('EasyRecord::joinsIncludes() parameter 1 is not a known relationship or incorrectly defined', 1);
@@ -182,7 +182,7 @@ class ERRelations
                 if (array_key_exists('foreign_key', $infosArray))
                     $cleEtrangere = $infosArray['foreign_key'];
                 if (array_key_exists('class_name', $infosArray))
-                    $hasOne = $model->getNamespace().$infosArray['class_name'];
+                    $hasOne = $infosArray['class_name'];
                 if (!isset($cleEtrangere) && array_key_exists('inverse_of', $infosArray))
                     $cleEtrangere = $hasOne::belongsTo()[$infosArray['inverse_of']]['foreign_key'];
             }
@@ -216,7 +216,7 @@ class ERRelations
         if (array_key_exists($string, $model::hasAndBelongsToMany())) {
             $infosArray = $model::hasAndBelongsToMany()[$string];
             if (array_key_exists('class_name', $infosArray))
-                $hasAndBelongsToMany = $model->getNamespace().$infosArray['class_name'];
+                $hasAndBelongsToMany = $infosArray['class_name'];
             if (array_key_exists('inverse_of', $infosArray))
                 $infosArray = $hasAndBelongsToMany::hasAndBelongsToMany()[$infosArray['inverse_of']];
             if (array_key_exists('association_foreign_key', $infosArray))
@@ -284,7 +284,7 @@ class ERRelations
             if (array_key_exists('foreign_key', $infosArray))
                 $cleEtrangere = $infosArray['foreign_key'];
             if (array_key_exists('class_name', $infosArray))
-                $belongsTo = $model->getNamespace().$infosArray['class_name'];
+                $belongsTo = $infosArray['class_name'];
             if (!isset($cleEtrangere) && array_key_exists('inverse_of', $infosArray))
                 $cleEtrangere = $belongsTo::hasMany()[$infosArray['inverse_of']]['foreign_key'];
             if (array_key_exists('polymorphic', $infosArray)) {

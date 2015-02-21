@@ -27,7 +27,7 @@ $config = [
     ],
 
 	'cancan' => [
-    	'enabled' => true,
+    	'enabled' => false,
     	'login_page' => '/account/login'
     ],
 

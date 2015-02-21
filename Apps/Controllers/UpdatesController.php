@@ -14,7 +14,7 @@ class UpdatesController extends ApplicationController{
         $this->layout = 'none';
 
         $queries = Input::get('queries');
-        if(!$queries || !is_int($queries) || $queries<1) {
+        if(!$queries || !is_numeric($queries) || $queries<1) {
         	$queries = 1;
         } elseif ($queries > 500) {
         	$queries = 500;
@@ -30,7 +30,5 @@ class UpdatesController extends ApplicationController{
         }
 
         $this->data['output'] = json_encode($tab);
-
-        //Profiler::enable();
 	}
 }

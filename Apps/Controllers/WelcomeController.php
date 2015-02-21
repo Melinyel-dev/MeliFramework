@@ -8,7 +8,7 @@ class WelcomeController extends ApplicationController{
 
     public $authorize;
 
-    public $readableMethods =   ['getJson'];
+    public $readableMethods =   [];
     public $createableMethods = [];
     public $updateableMethods = []; 
     public $destroyableMethods = [];
@@ -21,11 +21,6 @@ class WelcomeController extends ApplicationController{
 		//$this->data['demo'] = $demo;
 
         Profiler::enable();
-	}
-
-	// Exécussion du controller pour un appel en GET à /welcome/custom
-	public function getJson() {
-		$this->layout = 'none';
 	}
 }
 

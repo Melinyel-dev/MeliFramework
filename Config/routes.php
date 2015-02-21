@@ -12,10 +12,7 @@ Router::root('welcome#index');
 
 // Définition des accès à l'URL : /welcome/
 Router::resources('welcome', [
-    'only' => ['index'],			// Seul l'index est disponible sur les appels REST
-    'collection' => [
-        'get' => ['json']			// Une méthode personnalisée est définie en appel GET (/welcome/custom/)
-    ]
+    'only' => ['index']			// Seul l'index est disponible sur les appels REST
 ]);
 
 Router::resources('json', [

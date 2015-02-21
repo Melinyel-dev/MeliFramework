@@ -49,10 +49,16 @@ class Router{
     public static function resources(){
         $args = func_get_args();
         $namespaces = explode(DS,trim(Router::$currentDirectory,DS));
+        $namespacesFile = $namespaces;
         $namespace = null;
+        $namespaceFile = null;
 
         if(!empty($namespaces[0])){
+            array_walk($namespacesFile, function(&$array, $key) {
+                $array = ucfirst($array);
+            });
             $namespace = '/'.implode('/', $namespaces);
+            $namespaceFile = '/'.implode('/', $namespacesFile);
         }
 
         $resourceName = $args[0];
@@ -61,7 +67,7 @@ class Router{
         }
 
         $name = ucfirst($resourceName).'Controller';
-        $file = CONTROLLERS.$namespace.DS.$name.'.php';
+        $file = CONTROLLERS.$namespaceFile.DS.$name.'.php';
         $key = $resourceName;
         if(isset($resourceOptions)){
             if(array_key_exists('as',$resourceOptions)){

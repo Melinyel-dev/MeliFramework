@@ -4,7 +4,7 @@ use System\Helpers\Session;
 use System\Core\Hook;
 
 // Bibliothèque de lecture du format YAML
-require 'Spyc.php';
+//require 'Spyc.php';
 
 
 /*
@@ -35,10 +35,10 @@ switch ($GLOBALS['conf']['environment']){
         break;
     // Le mode production masque les erreurs
     case 'prod':
-        error_reporting(E_ALL);
-        ini_set('display_errors', 1);
-        /*error_reporting(0);
-        ini_set('display_errors', 0);*/
+        /*error_reporting(E_ALL);
+        ini_set('display_errors', 1);*/
+        error_reporting(0);
+        ini_set('display_errors', 0);
         break;
     default:
         exit('The application environment is not set correctly.');

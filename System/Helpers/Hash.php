@@ -21,11 +21,19 @@ class Hash{
             self::$_hash_method = $GLOBALS['conf']['hash']['salt_method'];
         }
 
-        return password_hash($password, PASSWORD_BCRYPT, ['cost' => $GLOBALS['conf']['hash']['cost'], 'salt' => call_user_func(self::$_hash_method)]);
+        return password_hash($password, PASSWORD_BCRYPT, ['cost' => $GLOBALS['conf']['hash']['cost'], 'salt' => call_user_func('System\Helpers\Hash::' . self::$_hash_method)]);
     }
 
     public static function check($password, $hash){
         return password_verify($password, $hash);
+    }
+
+    public static function needsRehash($password, $hash) {
+        if(self::$_hash_method == ''){
+            self::$_hash_method = $GLOBALS['conf']['hash']['salt_method'];
+        }
+
+        return password_needs_rehash($password, PASSWORD_BCRYPT, ['cost' => $GLOBALS['conf']['hash']['cost'], 'salt' => call_user_func('System\Helpers\Hash::' . self::$_hash_method)]);
     }
 
     public static function benchmark_cost($time_target = 0.5){
@@ -34,7 +42,7 @@ class Hash{
         do {
             $cost++;
             $start = microtime(true);
-            password_hash("Secret_Password", PASSWORD_BCRYPT, ['cost' => $cost, 'salt' => call_user_func(self::$_hash_method)]);
+            password_hash("Secret_Password", PASSWORD_BCRYPT, ['cost' => $cost, 'salt' => call_user_func('System\Helpers\Hash::' . self::$_hash_method)]);
             $end = microtime(true);
         } while (($end - $start) < $time_target);
 
@@ -151,7 +159,9 @@ class Hash{
         return $str;
     }
 
-
+    private static function default_hash_salt_method(){
+        return mcrypt_create_iv(22, MCRYPT_DEV_URANDOM);
+    }
 }
 
 /* End of file */

@@ -3,8 +3,8 @@ $config = [
   'testing' => [
     'host' => '127.0.0.1',
     'database' => 'melidev',
-    'login' => 'root',
-    'password' => 'Qu33nRysa',
+    'login' => 'melidev',
+    'password' => 'melidev',
     'port' => '3306',
     'socket' => 'var/run/mysqld/mysqld.sock'
   ],
@@ -12,8 +12,8 @@ $config = [
   'dev' => [
     'host' => '127.0.0.1',
     'database' => 'melidev',
-    'login' => 'root',
-    'password' => 'Qu33nRysa',
+    'login' => 'melidev',
+    'password' => 'melidev',
     'port' => '3306',
     'socket' => 'var/run/mysqld/mysqld.sock'
   ],
@@ -21,8 +21,8 @@ $config = [
   'prod' => [
     'host' => '127.0.0.1',
     'database' => 'melidev',
-    'login' => 'root',
-    'password' => 'Qu33nRysa',
+    'login' => 'melidev',
+    'password' => 'melidev',
     'port' => '3306',
     'socket' => 'var/run/mysqld/mysqld.sock'
   ]

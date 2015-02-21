@@ -10,11 +10,16 @@ class Auth{
      * @param  [type] $login
      * @param  [type] $password
      */
+
+
     public static function attempt($login, $password){
         $loginField = strtoupper($GLOBALS['conf']['auth']['login']);
         $compte = $GLOBALS['conf']['auth']['class']::query()->where($loginField, $login)->first();
 
-        if($compte && Hash::check($password, $compte->pass)){
+        if($compte && Hash::check($password, $compte->$GLOBALS['conf']['auth']['password'])){
+            if(Hash::needsRehash($password, $compte->$GLOBALS['conf']['auth']['password'])) {
+                $compte->$GLOBALS['conf']['auth']['password'] = Hash::make($password);
+            }
             $compte->setExpr('lastConnect', 'NOW()');
             $compte->save();
             Session::put('current_user', $compte->id);

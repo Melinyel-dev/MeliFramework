@@ -225,7 +225,7 @@ class Controller{
 	}
 
 	public function checkAbility(){
-		if(property_exists($this, 'authorize') && $GLOBALS['conf']['cancan']['enabled']) {
+		if($GLOBALS['conf']['cancan']['enabled'] && property_exists($this, 'authorize')) {
 			$this->cancan = new Ability(Auth::user());
 		}
 	}
