@@ -1,11 +1,15 @@
 MeliFramework
 =============
 
-Prérequis
+Requirements
 -----------
-  - PHP 5.5 ou supérieur
-  - MySQL 5.5 ou supérieur
-  - Memcached pour PHP
+  - PHP 5.5+ with php5-mysqlnd and php5-mcrypt enabled
+  - MySQL 5.5+
+
+
+Can work with
+------------
+  - Memcached
 
 
 TODO
@@ -16,6 +20,11 @@ TODO
 Release notes
 ==============
 
+v0.1b
+-----
+	- Many bugs fixes and small optimisations
+	- Added a welcome page
+
 v0.1
 -----
-  - Premier commit
+  - First commit
