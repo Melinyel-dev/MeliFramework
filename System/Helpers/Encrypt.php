@@ -1,33 +1,33 @@
 <?php
 
-namespace Orb\Security;
+namespace System\Helpers;
 
 /**
  * Encryption Class
- * 
+ *
  * Provides two-way keyed encoding using Mcrypt
  *
- * @author mathieu
+ * @author sugatasei
  */
 class Encrypt {
 
     /**
      * Encryption key
-     * 
+     *
      * @var string
      */
     private $key;
 
     /**
      * Mcrypt Cipher
-     * 
+     *
      * @var string
      */
     private $cipher;
 
     /**
      * Mcrypt Mode
-     * 
+     *
      * @var string
      */
     private $mode;
@@ -36,7 +36,7 @@ class Encrypt {
 
     /**
      * Set the encryption key
-     * 
+     *
      * @param string $key
      * @return \Orb\Security\Encrypt
      */
@@ -53,7 +53,7 @@ class Encrypt {
 
     /**
      * Set the Mcrypt Cipher
-     * 
+     *
      * @param string $cipher
      * @return \Orb\Security\Encrypt
      */
@@ -66,7 +66,7 @@ class Encrypt {
 
     /**
      * Set the Mcrypt Mode
-     * 
+     *
      * @param string $mode
      * @return \Orb\Security\Encrypt
      */
@@ -79,7 +79,7 @@ class Encrypt {
 
     /**
      * Returns an encoded string
-     * 
+     *
      * @param string $string
      * @param string $key
      * @return string
@@ -95,7 +95,7 @@ class Encrypt {
 
     /**
      * Returns a decoded string
-     * 
+     *
      * @param string $string
      * @param string $key
      * @return string|FALSE
@@ -116,10 +116,10 @@ class Encrypt {
 
     /**
      * Returns the encryption key
-     * 
+     *
      * Returns it as MD5 in order to have an exact-length 128 bit key.
      * Mcrypt is sensitive to keys that are not the correct length
-     * 
+     *
      * @param string $key
      * @return string
      * @throws \RuntimeException
@@ -142,7 +142,7 @@ class Encrypt {
 
     /**
      * Returns the Mcrypt Cipher
-     * 
+     *
      * @return string
      */
     private function _getCipher() {
@@ -158,7 +158,7 @@ class Encrypt {
 
     /**
      * Returns the Mcrypt Mode
-     * 
+     *
      * @return string
      */
     private function _getMode() {
@@ -174,7 +174,7 @@ class Encrypt {
 
     /**
      * Encrypt using Mcrypt
-     * 
+     *
      * @param string $data
      * @param string $key
      */
@@ -192,7 +192,7 @@ class Encrypt {
 
     /**
      * Add noise to the IV + encrypted data
-     * 
+     *
      * @param string $data
      * @param string $key
      * @return string
@@ -217,7 +217,7 @@ class Encrypt {
 
     /**
      * Decrypt using Mcrypt
-     * 
+     *
      * @param type $data
      * @param type $key
      */
@@ -243,7 +243,7 @@ class Encrypt {
 
     /**
      * Removes permuted noise from the IV + encrypted data
-     * 
+     *
      * @param string $data
      * @param string $key
      * @return string

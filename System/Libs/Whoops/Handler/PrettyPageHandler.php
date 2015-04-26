@@ -62,7 +62,7 @@ class PrettyPageHandler extends Handler
     }
 
     /**
-     * @return int|null
+     * @return int|NULL
      */
     public function handle()
     {
@@ -119,7 +119,7 @@ class PrettyPageHandler extends Handler
 
         call_user_func(function() use($templateFile, $v) {
             // $e -> cleanup output, optionally preserving URIs as anchors:
-            $e = function($_, $allowLinks = false) {
+            $e = function($_, $allowLinks = FALSE) {
                 $escaped = htmlspecialchars($_, ENT_QUOTES, 'UTF-8');
 
                 // convert URIs to clickable anchor elements:
@@ -192,12 +192,12 @@ class PrettyPageHandler extends Handler
      * Returns all the extra data tables registered with this handler.
      * Optionally accepts a 'label' parameter, to only return the data
      * table under that label.
-     * @param string|null $label
+     * @param string|NULL $label
      * @return array[]
      */
-    public function getDataTables($label = null)
+    public function getDataTables($label = NULL)
     {
-        if($label !== null) {
+        if($label !== NULL) {
             return isset($this->extraTables[$label]) ?
                    $this->extraTables[$label] : array();
         }
@@ -265,8 +265,8 @@ class PrettyPageHandler extends Handler
      */
     public function getEditorHref($filePath, $line)
     {
-        if($this->editor === null) {
-            return false;
+        if($this->editor === NULL) {
+            return FALSE;
         }
 
         $editor = $this->editor;

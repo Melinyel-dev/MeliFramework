@@ -4,9 +4,23 @@ namespace System\Orm;
 
 use Exception;
 
-class ERException extends Exception{
+/**
+ * ERException Class
+ *
+ * @author anaeria
+ */
 
-    public function __construct($message, $code = 0, Exception $previous = null) {
+class ERException extends Exception {
+
+    /**
+     * Constructeur
+     *
+     * @param string message
+     * @param int code
+     * @param object previoius
+     */
+
+    public function __construct($message, $code = 0, Exception $previous = NULL) {
         switch ($code) {
             case 2:
                 $message = 'MassAssignmentSecurity::Error '.$message;
@@ -17,6 +31,15 @@ class ERException extends Exception{
         }
         parent::__construct($message, 0, $previous);
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Affiche une exeption
+     *
+     * @return string
+     */
 
     public function __toString() {
         return __CLASS__ . ": [{$this->code}]: {$this->message}\n";

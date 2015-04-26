@@ -35,12 +35,12 @@ class Frame implements Serializable
 
     /**
      * @param  bool $shortened
-     * @return string|null
+     * @return string|NULL
      */
-    public function getFile($shortened = false)
+    public function getFile($shortened = FALSE)
     {
         if(empty($this->frame['file'])) {
-            return null;
+            return NULL;
         }
 
         $file = $this->frame['file'];
@@ -65,27 +65,27 @@ class Frame implements Serializable
     }
 
     /**
-     * @return int|null
+     * @return int|NULL
      */
     public function getLine()
     {
-        return isset($this->frame['line']) ? $this->frame['line'] : null;
+        return isset($this->frame['line']) ? $this->frame['line'] : NULL;
     }
 
     /**
-     * @return string|null
+     * @return string|NULL
      */
     public function getClass()
     {
-        return isset($this->frame['class']) ? $this->frame['class'] : null;
+        return isset($this->frame['class']) ? $this->frame['class'] : NULL;
     }
 
     /**
-     * @return string|null
+     * @return string|NULL
      */
     public function getFunction()
     {
-        return isset($this->frame['function']) ? $this->frame['function'] : null;
+        return isset($this->frame['function']) ? $this->frame['function'] : NULL;
     }
 
     /**
@@ -99,17 +99,17 @@ class Frame implements Serializable
     /**
      * Returns the full contents of the file for this frame,
      * if it's known.
-     * @return string|null
+     * @return string|NULL
      */
     public function getFileContents()
     {
-        if($this->fileContentsCache === null && $filePath = $this->getFile()) {
+        if($this->fileContentsCache === NULL && $filePath = $this->getFile()) {
 
-            // Return null if the file doesn't actually exist - this may
+            // Return NULL if the file doesn't actually exist - this may
             // happen in cases where the filename is provided as, for
             // example, 'Unknown'
             if(!is_file($filePath)) {
-                return null;
+                return NULL;
             }
 
             $this->fileContentsCache = file_get_contents($filePath);
@@ -145,11 +145,11 @@ class Frame implements Serializable
      * @param  string $filter
      * @return array[]
      */
-    public function getComments($filter = null)
+    public function getComments($filter = NULL)
     {
         $comments = $this->comments;
 
-        if($filter !== null) {
+        if($filter !== NULL) {
             $comments = array_filter($comments, function($c) use($filter) {
                 return $c['context'] == $filter;
             });
@@ -185,15 +185,15 @@ class Frame implements Serializable
      * @throws InvalidArgumentException if $length is less than or equal to 0
      * @param  int $start
      * @param  int $length
-     * @return string[]|null
+     * @return string[]|NULL
      */
-    public function getFileLines($start = 0, $length = null)
+    public function getFileLines($start = 0, $length = NULL)
     {
-        if(null !== ($contents = $this->getFileContents())) {
+        if(NULL !== ($contents = $this->getFileContents())) {
             $lines = explode("\n", $contents);
 
             // Get a subset of lines from $start to $end
-            if($length !== null)
+            if($length !== NULL)
             {
                 $start  = (int) $start;
                 $length = (int) $length;
@@ -207,7 +207,7 @@ class Frame implements Serializable
                     );
                 }
 
-                $lines = array_slice($lines, $start, $length, true);
+                $lines = array_slice($lines, $start, $length, TRUE);
             }
 
             return $lines;

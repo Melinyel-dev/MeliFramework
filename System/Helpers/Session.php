@@ -2,7 +2,13 @@
 
 namespace System\Helpers;
 
-class Session{
+/**
+ * Session Class
+ *
+ * @author sugatasei
+ */
+
+class Session {
 
     public static function start() {
         session_start();
@@ -19,7 +25,7 @@ class Session{
      */
     public static function put($key, $value) {
         $_SESSION[$key] = $value;
-        return true;
+        return TRUE;
     }
 
     /**
@@ -28,7 +34,7 @@ class Session{
      * @param  [type] $defaultValue valeur par défaut
      * @return [type]                [description]
      */
-    public static function get($key, $defaultValue = null) {
+    public static function get($key, $defaultValue = NULL) {
         if (array_key_exists($key, $_SESSION)) {
             return $_SESSION[$key];
         }
@@ -48,7 +54,7 @@ class Session{
      * @param  [type] $value valeur du tableau
      */
     public static function push($key, $value) {
-        if(mb_strpos($key, '.') !== false){
+        if(mb_strpos($key, '.') !== FALSE){
             $key = explode('.', $key);
             if(!array_key_exists($key[0], $_SESSION)){
                 $_SESSION[$key[0]] = [];
@@ -60,7 +66,7 @@ class Session{
             }
             $_SESSION[$key][] = $value;
         }
-        return true;
+        return TRUE;
     }
 
     /**
@@ -76,9 +82,9 @@ class Session{
      * @param  [type] $key nom de la variable
      */
     public static function forget($key){
-        $_SESSION[$key] = null;
+        $_SESSION[$key] = NULL;
         unset($_SESSION[$key]);
-        return true;
+        return TRUE;
     }
 
     /**
@@ -86,7 +92,7 @@ class Session{
      */
     public static function flush(){
         $_SESSION = [];
-        return true;
+        return TRUE;
     }
 
 }

@@ -37,7 +37,7 @@ class ERCache extends \Memcached {
 
     /**
      * Returns current instance of this class
-     * 
+     *
      * @return \Orb\EasyRecord\ERCache
      */
     public static function getInstance() {
@@ -105,8 +105,8 @@ class ERCache extends \Memcached {
     /**
      * Get an item
      *
-     * @param string $namespace If false, get all namespaces keys
-     * @param string $key If false, get all keys in a namespace
+     * @param string $namespace If FALSE, get all namespaces keys
+     * @param string $key If FALSE, get all keys in a namespace
      * @return boolean
      */
     public function nsGet($namespace, $key, $default = FALSE) {
@@ -309,8 +309,8 @@ class ERCache extends \Memcached {
     /**
      * Delete an item
      *
-     * @param string $namespace If false, all data are deleted
-     * @param string $key If false all data in a namespace are deleted
+     * @param string $namespace If FALSE, all data are deleted
+     * @param string $key If FALSE all data in a namespace are deleted
      */
     public function nsDelete($namespace, $key) {
 
@@ -334,8 +334,8 @@ class ERCache extends \Memcached {
     /**
      * Delete items into a namespace
      *
-     * @param  string $namespace If false, all data are deleted
-     * @param  array  $keys      If false all data in a namespace are deleted
+     * @param  string $namespace If FALSE, all data are deleted
+     * @param  array  $keys      If FALSE all data in a namespace are deleted
      */
     public function nsDeleteMulti($namespace, array $keys) {
 
@@ -350,7 +350,7 @@ class ERCache extends \Memcached {
     /**
      * Delete all from a namespace
      *
-     * @param string $namespace If false, all data are deleted
+     * @param string $namespace If FALSE, all data are deleted
      */
     public function nsDeleteNamespaceKeys($namespace) {
 
@@ -461,7 +461,7 @@ class ERCache extends \Memcached {
     /**
      * Get the namespaces list
      *
-     * @return array|false
+     * @return array|FALSE
      */
     private function _getNamespaces() {
         $namespaces = parent::get($this->_keyNamespaces());
@@ -492,7 +492,7 @@ class ERCache extends \Memcached {
     /**
      * Delete a namespace in the namespaces list
      *
-     * @param string|false $namespace If false, delete all
+     * @param string|FALSE $namespace If FALSE, delete all
      */
     private function _delNamespaces($namespace = FALSE) {
 
@@ -530,7 +530,7 @@ class ERCache extends \Memcached {
      * Get all keys from a namespace
      *
      * @param string $namespace
-     * @return array|false
+     * @return array|FALSE
      */
     private function _getNamespaceKeys($namespace) {
         $keys = parent::get($this->_keyNamespaceKeys($namespace));
@@ -630,7 +630,7 @@ class ERCache extends \Memcached {
      *
      * @param string $namespace
      * @param string $key
-     * @return mixed|false
+     * @return mixed|FALSE
      */
     private function _getItem($namespace, $key) {
         return parent::get($this->keyItem($namespace, $key));

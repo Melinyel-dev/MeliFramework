@@ -2,40 +2,54 @@
 
 namespace System\Helpers;
 
-class Redirect{
+use System\Core\Request;
+
+/**
+ * Redirect Class
+ *
+ * @author anaeria
+ */
+
+class Redirect {
 
     /**
      * Redirige vers une url
-     * @param  [type] $url url
+     * @param string url
      */
 
-    public static function to($url){
-        header("Location: ".$url);
+    public static function to($url) {
+        header("Location: " . $url);
         exit(0);
     }
 
+
+    // -------------------------------------------------------------------------
+
     /**
      * Redirige vers la page précédente
-     * @param  [type] $url url
      */
 
-    public static function back(){
-        if(Input::get('location')){
-            $url_back = Input::get('location');
-        }else{
+    public static function back() {
+        if (Request::getParam('location')) {
+            $url_back = Request::getParam('location');
+        } else {
             $url_back = $_SERVER['HTTP_REFERER'];
         }
-        header("Location: ".$url_back);
+
+        header("Location: " . $url_back);
         exit(0);
     }
 
+
+    // -------------------------------------------------------------------------
+
     /**
      * Redirige vers la page précédente
-     * @param  [type] $url url
+     * @param string url
      */
 
-    public static function toBack($url){
-        header('Location: '.$url.'?location='.urlencode($_SERVER['REQUEST_URI']));
+    public static function toBack($url) {
+        header('Location: ' . $url . '?location=' . urlencode($_SERVER['REQUEST_URI']));
         exit(0);
     }
 }

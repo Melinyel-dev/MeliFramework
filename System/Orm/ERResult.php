@@ -7,21 +7,21 @@ namespace System\Orm;
  *
  * Stores SQL results
  * Manages SQL results
- * 
- * @author mathieu
+ *
+ * @author sugatasei
  */
 class ERResult implements \Countable, \IteratorAggregate {
 
     /**
      * MySQLi Result
-     * 
-     * @var \mysqli_result 
+     *
+     * @var \mysqli_result
      */
     private $result;
 
     /**
      * Current row
-     * 
+     *
      * @var array
      */
     private $row = [];
@@ -40,9 +40,9 @@ class ERResult implements \Countable, \IteratorAggregate {
 
     /**
      * Fetch a result row as an associative array
-     * Returns null if there are no more rows
-     * 
-     * @return array|null
+     * Returns NULL if there are no more rows
+     *
+     * @return array|NULL
      */
     public function next() {
         $this->row = $this->result->fetch_assoc();
@@ -53,8 +53,8 @@ class ERResult implements \Countable, \IteratorAggregate {
 
     /**
      * Returns current row as associative array
-     * Returns null if there are no more rows
-     * 
+     * Returns NULL if there are no more rows
+     *
      * @return type
      */
     public function row() {
@@ -65,7 +65,7 @@ class ERResult implements \Countable, \IteratorAggregate {
 
     /**
      * Returns a column value from the current row
-     * 
+     *
      * @param string $key
      * @param mixed $default
      * @return mixed
@@ -78,7 +78,7 @@ class ERResult implements \Countable, \IteratorAggregate {
 
     /**
      * Returns all rows
-     * 
+     *
      * @return array
      */
     public function all() {
@@ -89,7 +89,7 @@ class ERResult implements \Countable, \IteratorAggregate {
 
     /**
      * Returns the number of rows
-     * 
+     *
      * @return int
      */
     public function count() {
@@ -100,7 +100,7 @@ class ERResult implements \Countable, \IteratorAggregate {
 
     /**
      * Create a new Iterator
-     * 
+     *
      * @return \ArrayIterator
      */
     public function getIterator() {

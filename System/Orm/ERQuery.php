@@ -2,21 +2,28 @@
 
 namespace System\Orm;
 
-use Cache;
 use Orb\Helpers\Text;
 
-class ERQuery implements \IteratorAggregate, \ArrayAccess {
-    #####################################
-    # Query
 
-    public $belongsToDetails        = null;
-    protected $model                = null;
-    protected $tableAlias           = null;
+/**
+ * ERQuery Class
+ *
+ * Query building
+ *
+ * @author anaeria
+ */
+
+class ERQuery implements \IteratorAggregate, \ArrayAccess {
+
+    // Query
+    public $belongsToDetails        = NULL;
+    protected $model                = NULL;
+    protected $tableAlias           = NULL;
     protected $resultColonnes       = [];
     protected $joinWhereTables      = [];
     protected $joinWhereContraintes = [];
     protected $joinSources          = [];
-    protected $joinFirstTable       = null;
+    protected $joinFirstTable       = NULL;
     protected $countFrom            = 0;
     protected $whereConditions      = [];
     protected $whereBinds           = ['types' => [], 'values' => []];
@@ -25,39 +32,67 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
     protected $havingConditions     = [];
     protected $havingBinds          = ['types' => [], 'values' => []];
     protected $orderBy              = [];
-    protected $limit                = null;
-    protected $offset               = null;
-    protected $fromExpr             = null;
-    protected $distinct             = false;
-    protected $rawQuery             = null;
-    protected $queryExecuted        = false;
+    protected $limit                = NULL;
+    protected $offset               = NULL;
+    protected $fromExpr             = NULL;
+    protected $distinct             = FALSE;
+    protected $rawQuery             = NULL;
+    protected $queryExecuted        = FALSE;
     protected $results              = [];
     protected $lightMode            = 0;
     protected $selectAliases        = [];
-    protected $cached               = null;
-    protected $sqlQuery             = null;
-    protected $bindParam            = null;
-    protected $first                = false;
-    protected $last                 = false;
+    protected $cached               = NULL;
+    protected $sqlQuery             = NULL;
+    protected $bindParam            = NULL;
+    protected $first                = FALSE;
+    protected $last                 = FALSE;
     // NOTE: TEMPORAIRE
-    protected $autoSelectChild      = true;
+    protected $autoSelectChild      = TRUE;
 
-    #####################################
-    # Scopes
+    // Scopes
     protected $scopesToExecute        = [];
-    protected $unscoped               = false;
+    protected $unscoped               = FALSE;
+
+
+    /**
+     * Construteur
+     *
+     * @param string model
+     */
 
     public function __construct($model) {
         $this->model = $model;
     }
 
-    #####################################
-    # IteratorAggregate, ArrayAccess
+
+
+    ###########################################################################
+    #
+    #  IteratorAggregate, ArrayAccess
+    #
+    ###########################################################################
+
+
+    /**
+     * Retourne le résultat de la requête sous la forme d'un objet ArrayIterator
+     *
+     * @return object
+     */
 
     public function getIterator() {
         $this->runQuery();
         return new \ArrayIterator($this->results);
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Définit un offset pour les résultats
+     *
+     * @param mixed offset
+     * @param mixed value
+     */
 
     public function offsetSet($offset, $value) {
         $this->runQuery();
@@ -69,63 +104,168 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         }
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Vérifie l'existance d'un offset
+     *
+     * @param mixed offset
+     * @return boolean
+     */
+
     public function offsetExists($offset) {
         $this->runQuery();
         return isset($this->results[$offset]);
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Détruit un offset
+     *
+     * @param mixed offset
+     */
+
     public function offsetUnset($offset) {
         unset($this->results[$offset]);
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Récupère un offset
+     *
+     * @param mixed offset
+     * @return array | NULL
+     */
+
     public function offsetGet($offset) {
         $this->runQuery();
-        return isset($this->results[$offset]) ? $this->results[$offset] : null;
+        return isset($this->results[$offset]) ? $this->results[$offset] : NULL;
     }
 
-    #####################################
-    # Cache
+
+
+    ############################################################################
+    #
+    #  Gestion du Cache
+    #
+    ############################################################################
+
+
+    /**
+     * Active la mise en cache
+     *
+     * @return object
+     */
 
     public function cache() {
-        $this->cached = true;
+        $this->cached = TRUE;
         return $this;
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Desactive la mise en cache
+     *
+     * @return object
+     */
 
     public function noCache() {
-        $this->cached = false;
+        $this->cached = FALSE;
         return $this;
     }
 
-    #####################################
-    # LightModes
+
+
+    ############################################################################
+    #
+    #  LightModes
+    #
+    ############################################################################
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Défini le résultat en lecture comme tableau associatif
+     *
+     * @return object
+     */
 
     public function assocArray() {
         $this->lightMode = 2;
         return $this;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Défini le résultat en lecture comme le tableau des clés primaires
+     *
+     * @return object
+     */
+
     public function ids() {
         $model           = $this->model;
         $this->lightMode = 1;
         $tableAlias      = $this->tableAlias ? $this->tableAlias : $model::table();
-        $this->select($tableAlias . '.' . $model::getIdentifier(false));
+        $this->select($tableAlias . '.' . $model::getIdentifier());
         return $this;
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Construit la requête
+     *
+     * @param array arguments
+     * @return array
+     */
 
     public function build($arguments = []) {
         $model = $this->model;
         return $model::build($arguments, $this->belongsToDetails);
     }
 
-    #####################################
-    # Scopes
+
+
+    ############################################################################
+    #
+    #  Scopes
+    #
+    ############################################################################
+
+
+    /**
+     * Desactive les scopes
+     *
+     * @return object
+     */
 
     public function unscoped() {
-        $this->unscoped = true;
+        $this->unscoped = TRUE;
         return $this;
     }
 
-    public function unscope($scopeName = null) {
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Désactive un scope
+     *
+     * @param string scopeName
+     * @return object
+     */
+
+    public function unscope($scopeName = NULL) {
         if (!$scopeName) {
             $this->scopesToExecute        = [];
         }
@@ -140,8 +280,21 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         return $this;
     }
 
-    #####################################
-    # Merge
+
+
+    ############################################################################
+    #
+    #  Fusion
+    #
+    ############################################################################
+
+
+    /**
+     * Fusionne deux requêtes
+     *
+     * @param object object
+     * @return object
+     */
 
     public function merge(ERQuery $object) {
         $model = $object->model;
@@ -163,41 +316,108 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         return $this;
     }
 
-    #####################################
-    # Alias
+
+
+    ############################################################################
+    #
+    #  Gestion des alias
+    #
+    ############################################################################
+
+
+    /**
+     * Alias de tableAlias
+     *
+     * @param string alias
+     * @return object
+     */
 
     public function alias($alias) {
         return $this->tableAlias($alias);
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Défini un alias pour la table du modèle
+     *
+     * @param string alias
+     * @return object
+     */
+
     public function tableAlias($alias) {
-        if (!is_string($alias))
-                throw new ERException(get_class($this->model) . '::tableAlias() expects paramter 1 to be a string, ' . gettype($alias) . ' given');
+        if (!is_string($alias)) {
+            throw new ERException(get_class($this->model) . '::tableAlias() expects paramter 1 to be a string, ' . gettype($alias) . ' given');
+        }
+
         if ($alias) {
             $this->tableAlias = $alias;
         }
         return $this;
     }
 
-    #####################################
-    # ReadOnly/Distinct/RawQuery/From
+
+
+    ############################################################################
+    #
+    #  ReadOnly / Distinct / RawQuery / From
+    #
+    ############################################################################
+
+
+    /**
+     * Active le mode lecture seule sur le modèle
+     *
+     * @return object
+     */
 
     public function readOnly() {
         $this->model->setReadOnly();
         return $this;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Ajoute l'instruction DISTINCT à la requête
+     *
+     * @return object
+     */
+
     public function distinct() {
-        $this->distinct = true;
+        $this->distinct = TRUE;
         return $this;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Définit une requête SQL brute
+     *
+     * @param string query
+     * @return object
+     */
+
     public function rawQuery($query) {
-        if (!is_string($query))
-                throw new ERException(get_class($this->model) . '::rawQuery() expects paramter 1 to be a string, ' . gettype($query) . ' given');
+        if (!is_string($query)) {
+            throw new ERException(get_class($this->model) . '::rawQuery() expects paramter 1 to be a string, ' . gettype($query) . ' given');
+        }
         $this->rawQuery = $query;
         return $this;
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Défini l'instruction FROM
+     *
+     * @param string from
+     * @return object
+     */
 
     public function from($from) {
         if (!is_string($from))
@@ -206,31 +426,84 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         return $this;
     }
 
-    #####################################
-    # Agregate functions
+
+
+    ############################################################################
+    #
+    #  Fonctions d'agrégation
+    #
+    ############################################################################
+
+
+    /**
+     * Défini l'instruction COUNT
+     *
+     * @param string colonne
+     */
 
     public function count($colonne = '*') {
         return $this->appelFonctionDbAgregat(__FUNCTION__, $colonne);
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Défini l'instruction MAX
+     *
+     * @param string colonne
+     */
+
     public function max($colonne) {
         return $this->appelFonctionDbAgregat(__FUNCTION__, $colonne);
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Défini l'instruction MIN
+     *
+     * @param string colonne
+     */
 
     public function min($colonne) {
         return $this->appelFonctionDbAgregat(__FUNCTION__, $colonne);
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Défini l'instruction AVG
+     *
+     * @param string colonne
+     */
+
     public function avg($colonne) {
         return $this->appelFonctionDbAgregat(__FUNCTION__, $colonne);
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Défini l'instruction SUM
+     *
+     * @param string colonne
+     */
 
     public function sum($colonne) {
         return $this->appelFonctionDbAgregat(__FUNCTION__, $colonne);
     }
 
-    #####################################
-    # Select
+
+
+    ############################################################################
+    #
+    #  Select
+    #
+    ############################################################################
 
     /**
      * Ajoute les colonnes à la liste de colonnes de la requête
@@ -246,15 +519,19 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         if (!empty($colonnes)) {
             $colonnes = $this->normaliserSelectPlusieursColonnes($colonnes);
             foreach ($colonnes as $alias => $colonne) {
-                if (is_numeric($alias)) $alias                 = null;
-                else $this->selectAliases[] = $alias;
+                if (is_numeric($alias)) {
+                    $alias = NULL;
+                }
+                else {
+                    $this->selectAliases[] = $alias;
+                }
                 $this->selectSingle($colonne, $alias);
             }
         }
 
         if ($this->autoSelectChild) {
             $model = $this->model;
-            $this->selectSingle($model::getIdentifier(false));
+            $this->selectSingle($model::getIdentifier());
 
             $relations = $this->model->relations();
             foreach ($relations::getForeignKeys($model::belongsTo()) as $key) {
@@ -265,23 +542,44 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         return $this;
     }
 
-    // NOTE: TEMPORAIRE
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Défini si les clés des relations doivent être sélectionnées
+     *
+     * @param boolean value
+     * @return object
+     */
+
     public function autoSelectChild($value = TRUE) {
         $this->autoSelectChild = (bool) $value;
         return $this;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Défini une expression SELECT
+     *
+     * @return object
+     */
+
     public function selectExpr() {
         $colonnes = $this->normaliserSelectPlusieursColonnes(func_get_args());
         foreach ($colonnes as $alias => $colonne) {
             if (is_numeric($alias)) {
-                $alias = null;
-                if (stripos($colonne, ' AS ') !== false) {
+                $alias = NULL;
+
+                if (stripos($colonne, ' AS ') !== FALSE) {
                     $str = explode(' AS ', $colonne);
                     array_shift($str);
+
                     foreach ($str as $value) {
-                        if (preg_match('/^[a-zA-Z\_\d]+/', $value, $aliasSelect))
-                                $this->selectAliases[] = $aliasSelect[0];
+                        if (preg_match('/^[a-zA-Z\_\d]+/', $value, $aliasSelect)) {
+                            $this->selectAliases[] = $aliasSelect[0];
+                        }
                     }
                 }
             } else {
@@ -292,8 +590,20 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         return $this;
     }
 
-    #####################################
-    # Where
+
+
+    ############################################################################
+    #
+    #  Where
+    #
+    ############################################################################
+
+
+    /**
+     * Construit une instruction WHERE
+     *
+     * @return object
+     */
 
     public function where() {
         $args = func_get_args();
@@ -301,7 +611,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
             return $this->ajoutWhere($args[0]);
         }
         elseif (count($args) > 1) {
-            if (strpos($args[0], '?') === false && count($args) == 2) {
+            if (strpos($args[0], '?') === FALSE && count($args) == 2) {
                 if (is_array($args[1])) {
                     if (count($args[1]) > 1) {
                         return $this->whereIn($args[0], $args[1]);
@@ -311,7 +621,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
                     }
                 }
                 else {
-                    if ($args[1] === null) return $this->whereNull($args[0]);
+                    if ($args[1] === NULL) return $this->whereNull($args[0]);
                     else
                             return $this->ajoutWhereSimple($args[0], '=', $args[1]);
                 }
@@ -327,6 +637,15 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         return $this;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction WHERE <> ou IS NOT NULL
+     *
+     * @return object
+     */
+
     public function whereNot($colonne, $valeur) {
         if (is_array($valeur)) {
             if (count($valeur)) {
@@ -334,39 +653,131 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
             }
         }
         else {
-            if ($valeur === null) return $this->whereNotNull($colonne);
-            else return $this->whereNotEqual($colonne, $valeur);
+            if ($valeur === NULL) {
+                return $this->whereNotNull($colonne);
+            }
+            else {
+                return $this->whereNotEqual($colonne, $valeur);
+            }
         }
         return $this;
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction WHERE <>
+     *
+     * @param string colone
+     * @param mixed valeur
+     * @return object
+     */
 
     public function whereNotEqual($colonne, $valeur) {
         return $this->ajoutWhereSimple($colonne, '<>', $valeur);
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction WHERE LIKE
+     *
+     * @param string colone
+     * @param mixed valeur
+     * @return object
+     */
+
     public function whereLike($colonne, $valeur) {
         return $this->ajoutWhereSimple($colonne, 'LIKE', $valeur);
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction WHERE NOT LIKE
+     *
+     * @param string colone
+     * @param mixed valeur
+     * @return object
+     */
 
     public function whereNotLike($colonne, $valeur) {
         return $this->ajoutWhereSimple($colonne, 'NOT LIKE', $valeur);
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction WHERE >
+     *
+     * @param string colone
+     * @param mixed valeur
+     * @return object
+     */
+
     public function whereGt($colonne, $valeur) {
         return $this->ajoutWhereSimple($colonne, '>', $valeur);
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction WHERE <
+     *
+     * @param string colone
+     * @param mixed valeur
+     * @return object
+     */
 
     public function whereLt($colonne, $valeur) {
         return $this->ajoutWhereSimple($colonne, '<', $valeur);
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction WHERE >=
+     *
+     * @param string colone
+     * @param mixed valeur
+     * @return object
+     */
+
     public function whereGte($colonne, $valeur) {
         return $this->ajoutWhereSimple($colonne, '>=', $valeur);
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction WHERE <=
+     *
+     * @param string colone
+     * @param mixed valeur
+     * @return object
+     */
+
     public function whereLte($colonne, $valeur) {
         return $this->ajoutWhereSimple($colonne, '<=', $valeur);
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction WHERE IN()
+     *
+     * @param string colonne
+     * @param array valeurTab
+     * @return object
+     */
 
     public function whereIn($colonne, $valeurTab) {
         if (count($valeurTab)) {
@@ -377,6 +788,17 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         return $this;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction WHERE NOT IN()
+     *
+     * @param string colonne
+     * @param array valeurTab
+     * @return object
+     */
+
     public function whereNotIn($colonne, $valeurTab) {
         if (count($valeurTab)) {
             $colonne  = $this->formatColumn($colonne);
@@ -386,18 +808,51 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         return $this;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction WHERE IS NULL
+     *
+     * @param string colonne
+     * @return object
+     */
+
     public function whereNull($colonne) {
         $colonne = $this->formatColumn($colonne);
         return $this->ajoutWhere(ERTools::quoteIdentifiant($colonne) . ' IS NULL');
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction WHERE ID NOT NULL
+     *
+     * @param string colonne
+     * @return object
+     */
 
     public function whereNotNull($colonne) {
         $colonne = $this->formatColumn($colonne);
         return $this->ajoutWhere(ERTools::quoteIdentifiant($colonne) . ' IS NOT NULL');
     }
 
-    #####################################
-    # Having
+
+
+    ############################################################################
+    #
+    #  Having
+    #
+    ############################################################################
+
+
+    /**
+     * Instruction HAVING
+     *
+     * @param string colonne
+     * @return object
+     */
 
     public function having() {
         $args = func_get_args();
@@ -407,12 +862,16 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         elseif (count($args) > 1) {
             if (ctype_alpha($args[0]) && count($args) == 2) {
                 if (is_array($args[1])) {
-                    if (count($valeurTab))
-                            return $this->havingIn($args[0], $args[1]);
+                    if (count($valeurTab)){
+                        return $this->havingIn($args[0], $args[1]);
+                    }
                 } else {
-                    if ($args[1] === null) return $this->havingNull($args[0]);
-                    else
-                            return $this->ajoutHavingSimple($args[0], '=', $args[1]);
+                    if ($args[1] === NULL) {
+                        return $this->havingNull($args[0]);
+                    }
+                    else {
+                        return $this->ajoutHavingSimple($args[0], '=', $args[1]);
+                    }
                 }
             } else {
                 $first_arg = array_shift($args);
@@ -425,6 +884,17 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         }
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction HAVING <> ou HAVING NOT NULL
+     *
+     * @param string colonne
+     * @param mixed valeur
+     * @return object
+     */
+
     public function havingNot($colonne, $valeur) {
         if (is_array($valeur)) {
             if (count($valeur)) {
@@ -432,72 +902,207 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
             }
         }
         else {
-            if ($valeur === null) return $this->havingNotNull($valeur);
-            else return $this->havingNotEqual($colonne, $valeur);
+            if ($valeur === NULL) {
+                return $this->havingNotNull($valeur);
+            }
+            else {
+                return $this->havingNotEqual($colonne, $valeur);
+            }
         }
         return $this;
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction HAVING <>
+     *
+     * @param string colonne
+     * @param mixed valeur
+     * @return object
+     */
 
     public function havingNotEqual($colonne, $valeur) {
         return $this->ajoutHavingSimple($colonne, '<>', $valeur);
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction HAVING LIKE
+     *
+     * @param string colonne
+     * @param mixed valeur
+     * @return object
+     */
+
     public function havingLike($colonne, $valeur) {
         return $this->ajoutHavingSimple($colonne, 'LIKE', $valeur);
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction HAVING NOT LIKE
+     *
+     * @param string colonne
+     * @param mixed valeur
+     * @return object
+     */
 
     public function havingNotLike($colonne, $valeur) {
         return $this->ajoutHavingSimple($colonne, 'NOT LIKE', $valeur);
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction HAVING >
+     *
+     * @param string colonne
+     * @param mixed valeur
+     * @return object
+     */
+
     public function havingGt($colonne, $valeur) {
         return $this->ajoutHavingSimple($colonne, '>', $valeur);
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction HAVING <
+     *
+     * @param string colonne
+     * @param mixed valeur
+     * @return object
+     */
 
     public function havingLt($colonne, $valeur) {
         return $this->ajoutHavingSimple($colonne, '<', $valeur);
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction HAVING >=
+     *
+     * @param string colonne
+     * @param mixed valeur
+     * @return object
+     */
+
     public function havingGte($colonne, $valeur) {
         return $this->ajoutHavingSimple($colonne, '>=', $valeur);
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction HAVING <=
+     *
+     * @param string colonne
+     * @param mixed valeur
+     * @return object
+     */
 
     public function havingLte($colonne, $valeur) {
         return $this->ajoutHavingSimple($colonne, '<=', $valeur);
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction HAVING IN()
+     *
+     * @param string colonne
+     * @param mixed valeurTab
+     * @return object
+     */
+
     public function havingIn($colonne, $valeurTab) {
         if (count($valeurTab)) {
-            $colonne  = $this->formatColumn($colonne, false);
+            $colonne  = $this->formatColumn($colonne, FALSE);
             $stringIn = $this->addHavingBinds($colonne, $valeurTab);
             return $this->ajoutHaving(ERTools::quoteIdentifiant($colonne) . ' IN (' . $stringIn . ')');
         }
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction HAVING NOT IN()
+     *
+     * @param string colonne
+     * @param mixed valeurTab
+     * @return object
+     */
+
     public function havingNotIn($colonne, $valeurTab) {
         if (count($valeurTab)) {
-            $colonne  = $this->formatColumn($colonne, false);
+            $colonne  = $this->formatColumn($colonne, FALSE);
             $stringIn = $this->addHavingBinds($colonne, $valeurTab);
             return $this->ajoutHaving(ERTools::quoteIdentifiant($colonne) . ' NOT IN (' . $stringIn . ')');
         }
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction HAVING IS NULL
+     *
+     * @param string colonne
+     * @return object
+     */
+
     public function havingNull($colonne) {
-        $colonne = $this->formatColumn($colonne, false);
+        $colonne = $this->formatColumn($colonne, FALSE);
         return $this->ajoutHaving(ERTools::quoteIdentifiant($colonne) . ' IS NULL');
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction HAVING IS NOT NULL
+     *
+     * @param string colonne
+     * @return object
+     */
+
     public function havingNotNull($colonne) {
-        $colonne = $this->formatColumn($colonne, false);
+        $colonne = $this->formatColumn($colonne, FALSE);
         return $this->ajoutHaving(ERTools::quoteIdentifiant($colonne) . ' IS NOT NULL');
     }
 
-    #####################################
-    # OrderBy
+
+
+    ############################################################################
+    #
+    #  OrderBy
+    #
+    ############################################################################
+
+
+    /**
+     * Instruction ORDER BY
+     *
+     * @return object
+     */
 
     public function orderBy() {
         $args       = func_get_args();
-        $orderByStr = null;
+        $orderByStr = NULL;
         foreach ($args as $order) {
             if ($order) {
                 $order = trim($order);
@@ -510,14 +1115,14 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
                     foreach ($tabArgs as $tabArg) {
                         $tabArg = trim($tabArg);
                         if (preg_match('/^[A-Za-z0-9_]+$/', $tabArg)) {
-                            $colonne         = $this->formatColumn($tabArg, false);
+                            $colonne         = $this->formatColumn($tabArg, FALSE);
                             $this->orderBy[] = ERTools::quoteIdentifiant($colonne);
                         }
                         else {
                             $elementsEgal     = explode('=', $tabArg);
                             $elementsSpace    = explode(' ', $elementsEgal[0]);
                             $elementsSpace[0] = trim($elementsSpace[0]);
-                            $elementsSpace[0] = $this->formatColumn($elementsSpace[0], false);
+                            $elementsSpace[0] = $this->formatColumn($elementsSpace[0], FALSE);
                             $elementsSpace[0] = ERTools::quoteIdentifiant($elementsSpace[0]);
                             $elementsEgal[0]  = implode(' ', $elementsSpace);
                             $tabArg           = implode('=', $elementsEgal);
@@ -530,15 +1135,45 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         return $this;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction ORDER BY DESC
+     *
+     * @param string colonne
+     * @return object
+     */
+
     public function orderByDesc($colonne) {
         $this->orderBy($colonne, 'DESC');
         return $this;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction ORDER BY ASC
+     *
+     * @param string colonne
+     * @return object
+     */
+
     public function orderByAsc($colonne) {
         $this->orderBy($colonne, 'ASC');
         return $this;
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction ORDER BY Custom
+     *
+     * @param string orderByExpr
+     * @return object
+     */
 
     public function orderByExpr($orderByExpr) {
         if ($orderByExpr) {
@@ -547,23 +1182,66 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         return $this;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Tri le jeu de résultat
+     *
+     * @return object
+     */
+
     public function reorderBy() {
         $this->orderBy = [];
         return call_user_func_array(array($this, 'orderBy'), func_get_args());
     }
 
-    #####################################
-    # Limit/Offset/GroupBy
+
+
+    ############################################################################
+    #
+    #  Limit / Offset / GroupBy
+    #
+    ############################################################################
+
+
+    /**
+     * Instruction LIMIT 0, limit
+     *
+     * @param int limit
+     * @return object
+     */
 
     public function limit($limit) {
         if ($limit) $this->limit = $limit;
         return $this;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction LIMIT offset, limit
+     *
+     * @param int offset
+     * @return object
+     */
+
     public function offset($offset) {
         $this->offset = $offset;
         return $this;
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction LIMIT (page - 1) * nb, nb
+     *
+     * @param int page
+     * @param int nb
+     * @return object
+     */
 
     public function paginate($page, $nb) {
         $this->offset = ($page - 1) * $nb;
@@ -571,105 +1249,210 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         return $this;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction GROUP BY
+     *
+     * @return object
+     */
+
     public function groupBy() {
         $args = func_get_args();
         foreach ($args as $colonne) {
-            $colonne         = $this->formatColumn($colonne, false);
+            $colonne         = $this->formatColumn($colonne, FALSE);
             $this->groupBy[] = ERTools::quoteIdentifiant($colonne);
         }
         return $this;
     }
 
-    #####################################
-    # Query Execute
+
+
+    ############################################################################
+    #
+    #  Execution des requêtes
+    #
+    ############################################################################
+
+
+    /**
+     * Récupère le premier élément d'une requête
+     *
+     * @param int n
+     * @return FALSE | array
+     */
 
     public function first($n = 1) {
-        $this->first = true;
+        $this->first = TRUE;
         return $this->take($n);
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Récupère le dernier élement d'une requête
+     *
+     * @param int n
+     * @return FALSE | array
+     */
 
     public function last($n = 1) {
-        $this->last = true;
+        $this->last = TRUE;
         return $this->take($n);
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Récupère les n premiers éléments d'une requête
+     *
+     * @param int n
+     * @return FALSE | array
+     */
+
     public function take($n = 1) {
-        if (!is_int($n))
-                throw new ERException(get_class($this->model) . '::take() expects paramter 1 to be a string, ' . gettype($n) . ' given');
+        if (!is_int($n)) {
+            throw new ERException(get_class($this->model) . '::take() expects paramter 1 to be a string, ' . gettype($n) . ' given');
+        }
+
         $this->limit($n);
         $lignes = $this->run();
+
         if (empty($lignes)) {
-            if ($n == 1) return false;
-            else return [];
+            if ($n == 1) {
+                return FALSE;
+            }
+            else {
+                return [];
+            }
         }
-        if ($n == 1) return $lignes[0];
+        if ($n == 1) {
+            return $lignes[0];
+        }
         return $lignes;
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Alias de toArray
+     *
+     * @return array
+     */
 
     public function all() {
         return $this->toArray();
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Retourne les résultats d'une requête sous forme de tableau
+     *
+     * @return array
+     */
 
     public function toArray() {
         $this->runQuery();
         return $this->results;
     }
 
-    public function find($id) {
 
+    // -------------------------------------------------------------------------
+
+    /**
+     * Retourne une instance (ou un groupe) de modèle(s) en fonction de leur clé promaire
+     *
+     * @param array | mixed id
+     * @return FALSE | object | array
+     */
+
+    public function find($id) {
         if (!is_array($id)) {
             return $this->findCacheFull($id);
         }
 
         $model = $this->model;
-        return $this->whereIn($model::getIdentifier(false), $id);
+        return $this->whereIn($model::getIdentifier(), $id);
     }
 
-    #####################################
-    # Junctions
+
+
+    #############################################################################
+    #
+    #  Jointures
+    #
+    #############################################################################
+
 
     /**
-     * Deprecated : alias de join
-     * @param  String $table       Table à joindre
-     * @param  String $contrainte  Jointure
-     * @param  String $tableAlias Alias de la table jointe
-     * @return This
+     * Effectue un groupe de jointures LEFT JOIN
+     *
+     * @return object
      */
-    public function joinWhere($table, array $contrainte, $tableAlias = null) {
-        $this->join($table, $contrainte, $tableAlias);
-
-        return $this;
-    }
 
     public function includes() {
         $args             = func_get_args();
         $key              = array_shift($args);
-        $alias            = null;
-        $aliasConcatTable = null;
+        $alias            = NULL;
+        $aliasConcatTable = NULL;
         $condition        = [];
-        $firstAlias       = true;
+        $firstAlias       = TRUE;
+
         foreach ($args as $arg) {
             if (!is_array($arg)) {
                 if ($firstAlias) {
-                    $firstAlias = false;
+                    $firstAlias = FALSE;
                     $alias      = $arg;
                 }
-                else $aliasConcatTable = $arg;
+                else {
+                    $aliasConcatTable = $arg;
+                }
             }
-            else $condition = $arg;
+            else {
+                $condition = $arg;
+            }
         }
+
         foreach ($this->joinsIncludes($key, $alias, $aliasConcatTable, $condition) as $detail) {
             $this->leftJoin($detail['table'], [$detail['cleEtrangere'] => $detail['identifier'], $detail['condition']], $detail['alias']);
         }
+
         return $this;
     }
 
-    public function joins($key, $alias = null, $aliasConcatTable = null) {
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction JOIN d'un groupe
+     *
+     * @param string key
+     * @param string alias
+     * @param string aliasConcatTable
+     * @return object
+     */
+
+    public function joins($key, $alias = NULL, $aliasConcatTable = NULL) {
         foreach ($this->joinsIncludes($key, $alias, $aliasConcatTable) as $detail) {
             $this->join($detail['table'], [$detail['identifier'] => $detail['cleEtrangere']], $detail['alias']);
         }
         return $this;
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction JOIN
+     *
+     * @return object
+     */
 
     public function join() {
         $args = func_get_args();
@@ -678,10 +1461,19 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
             return $this;
         }
         elseif (count($args) > 1) {
-            $tableAlias = isset($args[2]) ? $args[2] : null;
+            $tableAlias = isset($args[2]) ? $args[2] : NULL;
             return $this->ajoutJoinSource('', $args[0], $args[1], $tableAlias);
         }
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction LEFT OUTER JOIN
+     *
+     * @return object
+     */
 
     public function leftJoin() {
         $args = func_get_args();
@@ -690,10 +1482,19 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
             return $this;
         }
         elseif (count($args) > 1) {
-            $tableAlias = isset($args[2]) ? $args[2] : null;
+            $tableAlias = isset($args[2]) ? $args[2] : NULL;
             return $this->ajoutJoinSource('LEFT OUTER', $args[0], $args[1], $tableAlias);
         }
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction RIGHT OUTER JOIN
+     *
+     * @return object
+     */
 
     public function rightJoin() {
         $args = func_get_args();
@@ -702,10 +1503,19 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
             return $this;
         }
         elseif (count($args) > 1) {
-            $tableAlias = isset($args[2]) ? $args[2] : null;
+            $tableAlias = isset($args[2]) ? $args[2] : NULL;
             return $this->ajoutJoinSource('RIGHT OUTER', $args[0], $args[1], $tableAlias);
         }
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction FULL OUTER JOIN
+     *
+     * @return object
+     */
 
     public function fullJoin() {
         $args = func_get_args();
@@ -714,10 +1524,19 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
             return $this;
         }
         elseif (count($args) > 1) {
-            $tableAlias = isset($args[2]) ? $args[2] : null;
+            $tableAlias = isset($args[2]) ? $args[2] : NULL;
             return $this->ajoutJoinSource('FULL OUTER', $args[0], $args[1], $tableAlias);
         }
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction INNER JOIN
+     *
+     * @return object
+     */
 
     public function innerJoin() {
         $args = func_get_args();
@@ -726,13 +1545,26 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
             return $this;
         }
         elseif (count($args) > 1) {
-            $tableAlias = isset($args[2]) ? $args[2] : null;
+            $tableAlias = isset($args[2]) ? $args[2] : NULL;
             return $this->ajoutJoinSource('INNER', $args[0], $args[1], $tableAlias);
         }
     }
 
-    #####################################
-    # Private Query Maker
+
+
+    ############################################################################
+    #
+    #   Utilities
+    #
+    ############################################################################
+
+
+    /**
+     * Recherche une instance de modèle en cache ou en BDD
+     *
+     * @param mixed id
+     * @return FALSE | object
+     */
 
     private function findCacheFull($id) {
 
@@ -747,7 +1579,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         }
 
         if (!$result) {
-            $this->where($model::getIdentifier(false), $id);
+            $this->where($model::getIdentifier(), $id);
             $result = $this->take();
 
             if ($isCache && $result) {
@@ -758,13 +1590,27 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         return $result;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Uniformise une structure multi-colonne
+     *
+     * @param array colonnes
+     * @return array
+     */
+
     private function normaliserSelectPlusieursColonnes($colonnes) {
         $return = [];
         foreach ($colonnes as $colonne) {
             if (is_array($colonne)) {
                 foreach ($colonne as $key => $value) {
-                    if (!is_numeric($key)) $return[$value] = $key;
-                    else $return[]       = $value;
+                    if (!is_numeric($key)) {
+                        $return[$value] = $key;
+                    }
+                    else {
+                        $return[]       = $value;
+                    }
                 }
             } else {
                 $return[] = $colonne;
@@ -773,30 +1619,80 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         return $return;
     }
 
-    private function ajoutResultatColonne($expr, $alias = null) {
-        if ($alias !== null)
-                $expr .= ' AS ' . ERTools::quoteIdentifiant($alias);
-        if (array_search($expr, $this->resultColonnes) === false)
-                $this->resultColonnes[] = $expr;
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Construit une colonne de sélection
+     *
+     * @param string expr
+     * @param string alias
+     * @return object
+     */
+
+    private function ajoutResultatColonne($expr, $alias = NULL) {
+        if ($alias !== NULL) {
+            $expr .= ' AS ' . ERTools::quoteIdentifiant($alias);
+        }
+        if (array_search($expr, $this->resultColonnes) === FALSE) {
+            $this->resultColonnes[] = $expr;
+        }
         return $this;
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Ajoute une condition WHERE
+     *
+     * @param string fragement
+     * @return object
+     */
 
     private function ajoutWhere($fragment) {
         return $this->ajoutCondition('where', $fragment);
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Ajoute une condition WHERE préformatée
+     *
+     * @param string colonne
+     * @param string separateur
+     * @param string valeur
+     * @return object
+     */
+
     private function ajoutWhereSimple($colonne, $separateur, $valeur) {
         return $this->ajoutConditionSimple('where', $colonne, $separateur, $valeur);
     }
 
-    private function ajoutJoinSource($joinOperateur, $table, $contrainte, $tableAlias = null) {
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Effectue une jointure (JOIN) conditionnelle
+     *
+     * @param string joinOperateur
+     * @param string table
+     * @param string contrainte
+     * @param string tableAlias
+     * @return object
+     */
+
+    private function ajoutJoinSource($joinOperateur, $table, $contrainte, $tableAlias = NULL) {
         $model         = $this->model;
         $joinOperateur = trim($joinOperateur . ' JOIN');
         $table         = ERTools::quoteIdentifiant($table);
-        if ($tableAlias !== null) {
+
+        if ($tableAlias !== NULL) {
             $tableAlias = ERTools::quoteIdentifiant($tableAlias);
             $table .= ' ' . $tableAlias;
         }
+
         reset($contrainte);
         $premiereColonne = key($contrainte);
         $secondeColonne  = $contrainte[$premiereColonne];
@@ -825,6 +1721,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
                 }
             }
         }
+
         if (!$this->joinFirstTable) {
             if (substr_count($secondeColonne, '.') == 1) {
                 $this->joinFirstTable = explode('.', $secondeColonne)[0];
@@ -839,71 +1736,177 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         $secondeColonne      = $this->formatColumn($secondeColonne);
         $contrainte          = ERTools::quoteIdentifiant($premiereColonne) . ' = ' . ERTools::quoteIdentifiant($secondeColonne);
         $this->joinSources[] = $joinOperateur . ' ' . $table . ' ON ' . $contrainte . $condition;
+
         return $this;
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Construit une variable à la condition WHERE
+     *
+     * @param string colonne
+     * @param array valeurTab
+     * @return string
+     */
 
     private function addWhereBinds($colonne, $valeurTab) {
         $model    = $this->model;
         $aryIMark = [];
         $type     = 's';
-        if (array_key_exists($colonne, $model::mapping()))
-                $type     = $model::mapping()[$colonne]['type'][0];
+
+        if (array_key_exists($colonne, $model::mapping())) {
+            $type     = $model::mapping()[$colonne]['type'][0];
+        }
+
         foreach ($valeurTab as $value) {
             $this->whereBinds['types'][]  = $type;
             $this->whereBinds['values'][] = $value;
             $aryIMark[]                   = '?';
         }
+
         return implode(', ', $aryIMark);
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Construit une variable à la condition HAVING
+     *
+     * @param string colonne
+     * @param array valeurTab
+     * @return string
+     */
 
     private function addHavingBinds($colonne, $valeurTab) {
         $model    = $this->model;
         $aryIMark = [];
         $type     = 's';
-        if (array_key_exists($colonne, $model::mapping()))
-                $type     = $model::mapping()[$colonne]['type'][0];
+
+        if (array_key_exists($colonne, $model::mapping())) {
+            $type     = $model::mapping()[$colonne]['type'][0];
+        }
+
         foreach ($valeurTab as $value) {
             $this->havingBinds['types'][]  = $type;
             $this->havingBinds['values'][] = $value;
             $aryIMark[]                    = '?';
         }
+
         return implode(', ', $aryIMark);
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Ajoute une condition HAVING préformatée
+     *
+     * @param string colonne
+     * @param string separateur
+     * @param mixed valeur
+     * @return object
+     */
 
     private function ajoutHavingSimple($colonne, $separateur, $valeur) {
         return $this->ajoutConditionSimple('having', $colonne, $separateur, $valeur);
     }
 
-    private function selectSingle($colonne, $alias = null) {
-        if ($colonne !== '*') $colonne = $this->formatColumn($colonne);
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Ajoute une sélection de colonne
+     *
+     * @param string colonne
+     * @param string alias
+     * @return object
+     */
+
+    private function selectSingle($colonne, $alias = NULL) {
+        if ($colonne !== '*') {
+            $colonne = $this->formatColumn($colonne);
+        }
         return $this->ajoutResultatColonne(ERTools::quoteIdentifiant($colonne), $alias);
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Construit une agrégation
+     *
+     * @param string fonctionSql
+     * @param string colonne
+     * @return object
+     */
+
     private function appelFonctionDbAgregat($fonctionSql, $colonne) {
         $fonctionSql = strtoupper($fonctionSql);
-        if ('*' != $colonne) $colonne     = ERTools::quoteIdentifiant($colonne);
+        if ('*' != $colonne) {
+            $colonne = ERTools::quoteIdentifiant($colonne);
+        }
         $this->selectExpr([$fonctionSql . '(' . $colonne . ')' => $fonctionSql]);
         return $this;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Ajoute une codition HAVING
+     *
+     * @param string fragent
+     */
+
     private function ajoutHaving($fragment) {
         return $this->ajoutCondition('having', $fragment);
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Ajoute une condition préformatée
+     *
+     * @param string type
+     * @param string colonne
+     * @param string separateur
+     * @param mixed valeur
+     * @return object
+     */
 
     private function ajoutConditionSimple($type, $colonne, $separateur, $valeur) {
         $model                  = $this->model;
         $colonneOriginale       = $colonne;
         $colonne                = $this->formatColumn($colonne, ($type != 'having'));
         $type_colonne           = 's';
-        if (array_key_exists($colonneOriginale, $model::mapping()))
-                $type_colonne           = $model::mapping()[$colonneOriginale]['type'][0];
+
+        if (array_key_exists($colonneOriginale, $model::mapping())) {
+            $type_colonne       = $model::mapping()[$colonneOriginale]['type'][0];
+        }
+
         $bindType               = $type . 'Binds';
         $arrayBinds             = $this->$bindType;
         $arrayBinds['types'][]  = $type_colonne;
         $arrayBinds['values'][] = $valeur;
         $this->$bindType        = $arrayBinds;
+
         return $this->ajoutCondition($type, ERTools::quoteIdentifiant($colonne) . ' ' . $separateur . ' ?');
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Ajout d'une condition
+     *
+     * @param string type
+     * @param string fragment
+     * @return object
+     */
 
     private function ajoutCondition($type, $fragment) {
         $conditionsType = $type . 'Conditions';
@@ -911,11 +1914,25 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         return $this;
     }
 
-    private function joinsIncludes($key, $alias, $aliasConcatTable = null, $condition = []) {
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Effectue une jointure sur une relation
+     *
+     * @param string key
+     * @param string alias
+     * @param string aliasConcatTable
+     * @param array condition
+     * @return object
+     */
+
+    private function joinsIncludes($key, $alias, $aliasConcatTable = NULL, $condition = []) {
         $model       = $this->model;
         $string      = ucfirst($key);
         $staticTable = $model::table();
         $tableAlias  = $this->tableAlias ? $this->tableAlias : $staticTable;
+
         if (in_array($string, $model::hasMany()) || array_key_exists($string, $model::hasMany())) {
             return $this->joinsIncludesHasMany($key, $alias, $aliasConcatTable, $condition);
         }
@@ -931,41 +1948,98 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         throw new ERException('EasyRecord::joinsIncludes() parameter 1 is not a known relationship', 1);
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Effectue une jointure sur une relation 1 / n au travers d'une table de concaténation
+     *
+     * @param string key
+     * @param string alias
+     * @param string aliasConcatTable
+     * @param string condition
+     * @param string infosArray
+     * @param string hasMany
+     * @param string tableAlias
+     * @return object
+     */
+
     private function joinsIncludesHasManyThrough($key, $alias, $aliasConcatTable, $condition, $infosArray, $hasMany, $tableAlias) {
         $model     = $this->model;
         $through   = $infosArray['through'];
-        if ($through[strlen($through) - 1] == 's')
-                $through   = substr($through, 0, strlen($through) - 1);
+
+        if ($through[strlen($through) - 1] == 's') {
+            $through = substr($through, 0, strlen($through) - 1);
+        }
+
         $belongsTo = get_class($model);
         if (array_key_exists($belongsTo, $through::belongsTo())) {
-            $infosArray            = $through::belongsTo()[$belongsTo];
-            if (array_key_exists('foreign_key', $infosArray))
-                    $cleEtrangereBelongsTo = $infosArray['foreign_key'];
-            if (array_key_exists('class_name', $infosArray))
-                    $belongsTo             = $this->model->getNamespace() . $infosArray['class_name'];
-            if (!isset($cleEtrangereBelongsTo) && array_key_exists('inverse_of', $infosArray))
-                    $cleEtrangereBelongsTo = $belongsTo::hasMany()[$infosArray['inverse_of']]['foreign_key'];
+            $infosArray = $through::belongsTo()[$belongsTo];
+
+            if (array_key_exists('foreign_key', $infosArray)) {
+                $cleEtrangereBelongsTo = $infosArray['foreign_key'];
+            }
+
+            if (array_key_exists('class_name', $infosArray)) {
+                $belongsTo = $this->model->getNamespace() . $infosArray['class_name'];
+            }
+
+            if (!isset($cleEtrangereBelongsTo) && array_key_exists('inverse_of', $infosArray)) {
+                $cleEtrangereBelongsTo = $belongsTo::hasMany()[$infosArray['inverse_of']]['foreign_key'];
+            }
         }
-        if (!isset($cleEtrangereBelongsTo))
-                $cleEtrangereBelongsTo = $model::getIdentifier(false);
+
+        if (!isset($cleEtrangereBelongsTo)) {
+            $cleEtrangereBelongsTo = $model::getIdentifier();
+        }
+
         if (array_key_exists($hasMany, $through::belongsTo())) {
-            $infosArray          = $through::belongsTo()[$hasMany];
-            if (array_key_exists('foreign_key', $infosArray))
-                    $cleEtrangereHasMany = $infosArray['foreign_key'];
-            if (array_key_exists('class_name', $infosArray))
-                    $hasMany             = $this->model->getNamespace() . $infosArray['class_name'];
-            if (!isset($cleEtrangereHasMany) && array_key_exists('inverse_of', $infosArray))
-                    $cleEtrangereHasMany = $hasMany::hasMany()[$infosArray['inverse_of']]['foreign_key'];
+            $infosArray = $through::belongsTo()[$hasMany];
+
+            if (array_key_exists('foreign_key', $infosArray)) {
+                $cleEtrangereHasMany = $infosArray['foreign_key'];
+            }
+
+            if (array_key_exists('class_name', $infosArray)) {
+                $hasMany = $this->model->getNamespace() . $infosArray['class_name'];
+            }
+
+            if (!isset($cleEtrangereHasMany) && array_key_exists('inverse_of', $infosArray)) {
+                $cleEtrangereHasMany = $hasMany::hasMany()[$infosArray['inverse_of']]['foreign_key'];
+            }
         }
-        if (!isset($cleEtrangereHasMany))
-                $cleEtrangereHasMany = $hasMany::getIdentifier(false);
-        if (!$alias) $alias               = $hasMany::table();
-        if (!$aliasConcatTable) $aliasConcatTable    = $through::table();
+
+        if (!isset($cleEtrangereHasMany)) {
+            $cleEtrangereHasMany = $hasMany::getIdentifier();
+        }
+
+        if (!$alias) {
+            $alias = $hasMany::table();
+        }
+
+        if (!$aliasConcatTable) {
+            $aliasConcatTable = $through::table();
+        }
+
         $throughDatabase     = $through::database();
-        return [['table' => $throughDatabase . '.' . $through::table(), 'cleEtrangere' => $aliasConcatTable . '.' . $cleEtrangereBelongsTo, 'identifier' => $tableAlias . '.' . $model::getIdentifier(false), 'alias' => $aliasConcatTable, 'condition' => []],
-            ['table' => $throughDatabase . '.' . $hasMany::table(), 'cleEtrangere' => $aliasConcatTable . '.' . $cleEtrangereHasMany, 'identifier' => $alias . '.' . $hasMany::getIdentifier(false), 'alias' => $alias, 'condition' => $condition]
+
+        return [['table' => $throughDatabase . '.' . $through::table(), 'cleEtrangere' => $aliasConcatTable . '.' . $cleEtrangereBelongsTo, 'identifier' => $tableAlias . '.' . $model::getIdentifier(), 'alias' => $aliasConcatTable, 'condition' => []],
+            ['table' => $throughDatabase . '.' . $hasMany::table(), 'cleEtrangere' => $aliasConcatTable . '.' . $cleEtrangereHasMany, 'identifier' => $alias . '.' . $hasMany::getIdentifier(), 'alias' => $alias, 'condition' => $condition]
         ];
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Effectue uen jointure sur une relation 1 / n
+     *
+     * @param string key
+     * @param string alias
+     * @param string aliasConcatTable
+     * @param string condition
+     * @return object
+     */
 
     private function joinsIncludesHasMany($key, $alias, $aliasConcatTable, $condition) {
         $model       = $this->model;
@@ -973,24 +2047,52 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         $staticTable = $model::table();
         $tableAlias  = $this->tableAlias ? $this->tableAlias : $staticTable;
         $hasMany     = $this->model->getNamespace() . $string;
-        if ($hasMany[strlen($hasMany) - 1] == 's')
-                $hasMany     = substr($hasMany, 0, strlen($hasMany) - 1);
+
+        if ($hasMany[strlen($hasMany) - 1] == 's') {
+            $hasMany = substr($hasMany, 0, strlen($hasMany) - 1);
+        }
         if (array_key_exists($string, $model::hasMany())) {
-            $infosArray   = $model::hasMany()[$string];
-            if (array_key_exists('foreign_key', $infosArray))
-                    $cleEtrangere = $infosArray['foreign_key'];
-            if (array_key_exists('class_name', $infosArray))
-                    $hasMany      = $this->model->getNamespace() . $infosArray['class_name'];
-            if (!isset($cleEtrangere) && array_key_exists('inverse_of', $infosArray))
-                    $cleEtrangere = $hasMany::belongsTo()[$infosArray['inverse_of']]['foreign_key'];
+            $infosArray = $model::hasMany()[$string];
+
+            if (array_key_exists('foreign_key', $infosArray)) {
+                $cleEtrangere = $infosArray['foreign_key'];
+            }
+
+            if (array_key_exists('class_name', $infosArray)) {
+                $hasMany = $this->model->getNamespace() . $infosArray['class_name'];
+            }
+
+            if (!isset($cleEtrangere) && array_key_exists('inverse_of', $infosArray)) {
+                $cleEtrangere = $hasMany::belongsTo()[$infosArray['inverse_of']]['foreign_key'];
+            }
             if (array_key_exists('through', $infosArray)) {
                 return $this->joinsIncludesHasManyThrough($key, $alias, $aliasConcatTable, $condition, $infosArray, $hasMany, $tableAlias);
             }
         }
-        if (!isset($cleEtrangere)) $cleEtrangere = $model::getIdentifier(false);
-        if (!$alias) $alias        = $hasMany::table();
-        return [['table' => $hasMany::database() . '.' . $hasMany::table(), 'cleEtrangere' => $alias . '.' . $cleEtrangere, 'alias' => $alias, 'identifier' => $tableAlias . '.' . $model::getIdentifier(false), 'condition' => $condition]];
+
+        if (!isset($cleEtrangere)) {
+            $cleEtrangere = $model::getIdentifier();
+        }
+
+        if (!$alias) {
+            $alias = $hasMany::table();
+        }
+
+        return [['table' => $hasMany::database() . '.' . $hasMany::table(), 'cleEtrangere' => $alias . '.' . $cleEtrangere, 'alias' => $alias, 'identifier' => $tableAlias . '.' . $model::getIdentifier(), 'condition' => $condition]];
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Effectue une jointure sur une relation modèle / 1
+     *
+     * @param string key
+     * @param string alias
+     * @param string aliasConcatTable
+     * @param string condition
+     * @return object
+     */
 
     private function joinsIncludesHasOne($key, $alias, $aliasConcatTable, $condition) {
         $model       = $this->model;
@@ -998,19 +2100,46 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         $staticTable = $model::table();
         $tableAlias  = $this->tableAlias ? $this->tableAlias : $staticTable;
         $hasOne      = $this->model->getNamespace() . $string;
+
         if (array_key_exists($string, $model::hasOne())) {
-            $infosArray   = $model::hasOne()[$string];
-            if (array_key_exists('foreign_key', $infosArray))
-                    $cleEtrangere = $infosArray['foreign_key'];
-            if (array_key_exists('class_name', $infosArray))
-                    $hasOne       = $this->model->getNamespace() . $infosArray['class_name'];
-            if (!isset($cleEtrangere) && array_key_exists('inverse_of', $infosArray))
-                    $cleEtrangere = $hasOne::belongsTo()[$infosArray['inverse_of']]['foreign_key'];
+            $infosArray = $model::hasOne()[$string];
+
+            if (array_key_exists('foreign_key', $infosArray)) {
+                $cleEtrangere = $infosArray['foreign_key'];
+            }
+
+            if (array_key_exists('class_name', $infosArray)) {
+                $hasOne = $this->model->getNamespace() . $infosArray['class_name'];
+            }
+
+            if (!isset($cleEtrangere) && array_key_exists('inverse_of', $infosArray)) {
+                $cleEtrangere = $hasOne::belongsTo()[$infosArray['inverse_of']]['foreign_key'];
+            }
         }
-        if (!isset($cleEtrangere)) $cleEtrangere = $model::getIdentifier(false);
-        if (!$alias) $alias        = $hasOne::table();
-        return [['table' => $hasOne::database() . '.' . $hasOne::table(), 'cleEtrangere' => $alias . '.' . $cleEtrangere, 'alias' => $alias, 'identifier' => $tableAlias . '.' . $model::getIdentifier(false), 'condition' => $condition]];
+
+        if (!isset($cleEtrangere)) {
+            $cleEtrangere = $model::getIdentifier();
+        }
+
+        if (!$alias) {
+            $alias = $hasOne::table();
+        }
+
+        return [['table' => $hasOne::database() . '.' . $hasOne::table(), 'cleEtrangere' => $alias . '.' . $cleEtrangere, 'alias' => $alias, 'identifier' => $tableAlias . '.' . $model::getIdentifier(), 'condition' => $condition]];
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Effectue une jointure sur une relation 1 / modèle
+     *
+     * @param string key
+     * @param string alias
+     * @param string aliasConcatTable
+     * @param string condition
+     * @return object
+     */
 
     private function joinsIncludesBelongsTo($key, $alias, $aliasConcatTable, $condition) {
         $model       = $this->model;
@@ -1018,20 +2147,46 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         $staticTable = $model::table();
         $tableAlias  = $this->tableAlias ? $this->tableAlias : $staticTable;
         $belongsTo   = $this->model->getNamespace() . $string;
+
         if (array_key_exists($string, $model::belongsTo())) {
-            $infosArray   = $model::belongsTo()[$string];
-            if (array_key_exists('foreign_key', $infosArray))
-                    $cleEtrangere = $infosArray['foreign_key'];
-            if (array_key_exists('class_name', $infosArray))
-                    $belongsTo    = $this->model->getNamespace() . $infosArray['class_name'];
-            if (!isset($cleEtrangere) && array_key_exists('inverse_of', $infosArray))
-                    $cleEtrangere = $belongsTo::hasMany()[$infosArray['inverse_of']]['foreign_key'];
+            $infosArray = $model::belongsTo()[$string];
+
+            if (array_key_exists('foreign_key', $infosArray)) {
+                $cleEtrangere = $infosArray['foreign_key'];
+            }
+
+            if (array_key_exists('class_name', $infosArray)) {
+                $belongsTo = $this->model->getNamespace() . $infosArray['class_name'];
+            }
+
+            if (!isset($cleEtrangere) && array_key_exists('inverse_of', $infosArray)) {
+                $cleEtrangere = $belongsTo::hasMany()[$infosArray['inverse_of']]['foreign_key'];
+            }
         }
-        if (!isset($cleEtrangere))
-                $cleEtrangere = $belongsTo::getIdentifier(false);
-        if (!$alias) $alias        = $belongsTo::table();
-        return [['table' => $belongsTo::database() . '.' . $belongsTo::table(), 'cleEtrangere' => $alias . '.' . $belongsTo::getIdentifier(false), 'alias' => $alias, 'identifier' => $tableAlias . '.' . $cleEtrangere, 'condition' => $condition]];
+
+        if (!isset($cleEtrangere)) {
+            $cleEtrangere = $belongsTo::getIdentifier();
+        }
+
+        if (!$alias) {
+            $alias = $belongsTo::table();
+        }
+
+        return [['table' => $belongsTo::database() . '.' . $belongsTo::table(), 'cleEtrangere' => $alias . '.' . $belongsTo::getIdentifier(), 'alias' => $alias, 'identifier' => $tableAlias . '.' . $cleEtrangere, 'condition' => $condition]];
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Effectue une jointure sur une relation m / n
+     *
+     * @param string key
+     * @param string alias
+     * @param string aliasConcatTable
+     * @param string condition
+     * @return object
+     */
 
     private function joinsIncludesHasAndBelongsToMany($key, $alias, $aliasConcatTable, $condition) {
         $model               = $this->model;
@@ -1039,42 +2194,79 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         $staticTable         = $model::table();
         $tableAlias          = $this->tableAlias ? $this->tableAlias : $staticTable;
         $hasAndBelongsToMany = $this->model->getNamespace() . $string;
-        if ($hasAndBelongsToMany[strlen($hasAndBelongsToMany) - 1] == 's')
-                $hasAndBelongsToMany = substr($hasAndBelongsToMany, 0, strlen($hasAndBelongsToMany) - 1);
-        $database            = $model::database();
-        if (array_key_exists($string, $model::hasAndBelongsToMany())) {
-            $infosArray              = $model::hasAndBelongsToMany()[$string];
-            if (array_key_exists('class_name', $infosArray))
-                    $hasAndBelongsToMany     = $this->model->getNamespace() . $infosArray['class_name'];
-            if (array_key_exists('inverse_of', $infosArray))
-                    $infosArray              = $hasAndBelongsToMany::hasAndBelongsToMany()[$infosArray['inverse_of']];
-            if (array_key_exists('association_foreign_key', $infosArray))
-                    $associationCleEtrangere = $infosArray['association_foreign_key'];
-            if (array_key_exists('foreign_key', $infosArray))
-                    $concatCleEtrangere      = $infosArray['foreign_key'];
-            if (array_key_exists('table', $infosArray))
-                    $concatTable             = $infosArray['table'];
-            if (array_key_exists('database', $infosArray))
-                    $database                = $infosArray['database'];
+
+        if ($hasAndBelongsToMany[strlen($hasAndBelongsToMany) - 1] == 's') {
+            $hasAndBelongsToMany = substr($hasAndBelongsToMany, 0, strlen($hasAndBelongsToMany) - 1);
         }
-        if (!isset($associationCleEtrangere))
-                $associationCleEtrangere = $hasAndBelongsToMany::getIdentifier(false);
-        if (!isset($concatCleEtrangere))
-                $concatCleEtrangere      = $model::getIdentifier(false);
-        $habtmTable              = $hasAndBelongsToMany::table();
-        $objetTable              = $hasAndBelongsToMany::database() . '.' . $habtmTable;
+        $database = $model::database();
+
+        if (array_key_exists($string, $model::hasAndBelongsToMany())) {
+            $infosArray = $model::hasAndBelongsToMany()[$string];
+
+            if (array_key_exists('class_name', $infosArray)) {
+                $hasAndBelongsToMany = $this->model->getNamespace() . $infosArray['class_name'];
+            }
+
+            if (array_key_exists('inverse_of', $infosArray)) {
+                $infosArray = $hasAndBelongsToMany::hasAndBelongsToMany()[$infosArray['inverse_of']];
+            }
+
+            if (array_key_exists('association_foreign_key', $infosArray)) {
+                $associationCleEtrangere = $infosArray['association_foreign_key'];
+            }
+
+            if (array_key_exists('foreign_key', $infosArray)) {
+                $concatCleEtrangere = $infosArray['foreign_key'];
+            }
+
+            if (array_key_exists('table', $infosArray)) {
+                $concatTable = $infosArray['table'];
+            }
+
+            if (array_key_exists('database', $infosArray)) {
+                $database = $infosArray['database'];
+            }
+        }
+
+        if (!isset($associationCleEtrangere)) {
+            $associationCleEtrangere = $hasAndBelongsToMany::getIdentifier();
+        }
+
+        if (!isset($concatCleEtrangere)) {
+            $concatCleEtrangere = $model::getIdentifier();
+        }
+
+        $habtmTable = $hasAndBelongsToMany::table();
+        $objetTable = $hasAndBelongsToMany::database() . '.' . $habtmTable;
+
         if (!isset($concatTable)) {
             if ($habtmTable < $staticTable)
                     $concatTable = $habtmTable . '_' . $staticTable;
             else $concatTable = $staticTable . '_' . $habtmTable;
         }
-        $concatTableDb    = $database . '.' . $concatTable;
-        if (!$alias) $alias            = $habtmTable;
-        if (!$aliasConcatTable) $aliasConcatTable = $concatTable;
-        return [['table' => $concatTableDb, 'cleEtrangere' => $aliasConcatTable . '.' . $concatCleEtrangere, 'identifier' => $tableAlias . '.' . $model::getIdentifier(false), 'alias' => $aliasConcatTable, 'condition' => $condition],
-            ['table' => $objetTable, 'cleEtrangere' => $aliasConcatTable . '.' . $associationCleEtrangere, 'identifier' => $alias . '.' . $hasAndBelongsToMany::getIdentifier(false), 'alias' => $alias, 'condition' => $condition]
+
+        $concatTableDb = $database . '.' . $concatTable;
+        if (!$alias) {
+            $alias = $habtmTable;
+        }
+
+        if (!$aliasConcatTable) {
+            $aliasConcatTable = $concatTable;
+        }
+
+        return [['table' => $concatTableDb, 'cleEtrangere' => $aliasConcatTable . '.' . $concatCleEtrangere, 'identifier' => $tableAlias . '.' . $model::getIdentifier(), 'alias' => $aliasConcatTable, 'condition' => $condition],
+            ['table' => $objetTable, 'cleEtrangere' => $aliasConcatTable . '.' . $associationCleEtrangere, 'identifier' => $alias . '.' . $hasAndBelongsToMany::getIdentifier(), 'alias' => $alias, 'condition' => $condition]
         ];
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Effectue une sélection sur toutes les colonnes
+     *
+     * @return object
+     */
 
     private function selectAll() {
         $colonnes = func_get_args();
@@ -1087,22 +2279,52 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         return $this;
     }
 
-    private function formatColumn($colonne, $check = true) {
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Formatte un identifiant de colonne
+     *
+     * @param string colonne
+     * @param boolean check
+     * @return string
+     */
+
+    private function formatColumn($colonne, $check = TRUE) {
         $model = $this->model;
-        if (($check || !in_array($colonne, $this->selectAliases)) && strpos($colonne, '.') === false) {
-            if ($this->tableAlias !== null)
-                    $colonne = $this->tableAlias . '.' . $colonne;
-            else $colonne = $model::table() . '.' . $colonne;
+        if (($check || !in_array($colonne, $this->selectAliases)) && strpos($colonne, '.') === FALSE) {
+            if ($this->tableAlias !== NULL) {
+                $colonne = $this->tableAlias . '.' . $colonne;
+            }
+            else {
+                $colonne = $model::table() . '.' . $colonne;
+            }
         }
         return $colonne;
     }
 
-    #####################################
-    # Private Query Builder
+
+
+    ############################################################################
+    #
+    #  Construction de requêtes
+    #
+    ############################################################################
+
+
+    /**
+     * Construction d'une requête SELECT
+     *
+     * @return string
+     */
 
     private function buildSelect() {
         $this->bindParam = new ERBindParam();
-        if ($this->rawQuery) return $this->rawQuery;
+
+        if ($this->rawQuery) {
+            return $this->rawQuery;
+        }
+
         $this->buildSelectStart();
         $this->buildFrom();
         $this->buildJoin();
@@ -1112,8 +2334,18 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         $this->buildOrderBy();
         $this->buildLimit();
         $this->buildOffset();
+
         return $this->sqlQuery;
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Construit le début une requête SELECT
+     *
+     * @return object
+     */
 
     private function buildSelectStart() {
         $model = $this->model;
@@ -1123,11 +2355,22 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         }
         $resultColonnes = implode(', ', $this->resultColonnes);
 
-        if ($this->distinct) $resultColonnes = 'DISTINCT ' . $resultColonnes;
+        if ($this->distinct) {
+            $resultColonnes = 'DISTINCT ' . $resultColonnes;
+        }
 
         $this->sqlQuery = 'SELECT ' . $resultColonnes . ' FROM ';
         return $this;
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Constuit la partie FROM
+     *
+     * @return object
+     */
 
     private function buildFrom() {
 
@@ -1148,6 +2391,15 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         return $this;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Constuit les jointures
+     *
+     * @return object
+     */
+
     private function buildJoin() {
         // Real Join
         if (count($this->joinSources)) {
@@ -1162,12 +2414,26 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         return $this;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Constuit la condition WHERE
+     *
+     * @return object
+     */
+
     private function buildWhere() {
         if (count($this->whereConditions)) {
             $whereConditions = implode(' AND ', $this->whereConditions);
-            if (count($this->joinWhereTables))
-                    $this->sqlQuery .= ' AND ' . $whereConditions;
-            else $this->sqlQuery .= ' WHERE ' . $whereConditions;
+
+            if (count($this->joinWhereTables)) {
+                $this->sqlQuery .= ' AND ' . $whereConditions;
+            }
+            else {
+                $this->sqlQuery .= ' WHERE ' . $whereConditions;
+            }
+
             foreach ($this->whereBinds['values'] as $index => $value) {
                 $this->bindParam->add($this->whereBinds['types'][$index], $value);
             }
@@ -1175,11 +2441,30 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         return $this;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Constuit la partie GROUP BY
+     *
+     * @return object
+     */
+
     private function buildGroupBy() {
-        if (count($this->groupBy))
-                $this->sqlQuery .= ' GROUP BY ' . implode(', ', $this->groupBy);
+        if (count($this->groupBy)) {
+            $this->sqlQuery .= ' GROUP BY ' . implode(', ', $this->groupBy);
+        }
         return $this;
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Construit la partie HAVING
+     *
+     * @return object
+     */
 
     private function buildHaving() {
         if (count($this->havingConditions)) {
@@ -1191,29 +2476,84 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         return $this;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Construit la partie ORDER BY
+     *
+     * @return object
+     */
+
     private function buildOrderBy() {
-        if (count($this->orderBy))
-                $this->sqlQuery .= ' ORDER BY ' . implode(', ', $this->orderBy);
+        if (count($this->orderBy)) {
+            $this->sqlQuery .= ' ORDER BY ' . implode(', ', $this->orderBy);
+        }
         return $this;
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Construit la partie LIMIT
+     *
+     * @return object
+     */
 
     private function buildLimit() {
-        if ($this->limit !== null) $this->sqlQuery .= ' LIMIT ' . $this->limit;
+        if ($this->limit !== NULL) {
+            $this->sqlQuery .= ' LIMIT ' . $this->limit;
+        }
         return $this;
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Construit la partie OFFSET
+     *
+     * @return object
+     */
 
     private function buildOffset() {
-        if ($this->offset !== null)
-                $this->sqlQuery .= ' OFFSET ' . $this->offset;
+        if ($this->offset !== NULL) {
+            $this->sqlQuery .= ' OFFSET ' . $this->offset;
+        }
         return $this;
     }
 
-    #####################################
-    # Magic
+
+
+    ############################################################################
+    #
+    #  Méthodes magiques
+    #
+    ############################################################################
+
+
+    /**
+     * Gère les accès aux propriétés des relations
+     *
+     * @param string key
+     * @return mixed
+     */
 
     public function __get($key) {
         return $this->model->relations()->getRelations($key, $this->model, $this->tableAlias);
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Gère la création dynamique de propriétés
+     *
+     * @param string name
+     * @param array arguments
+     * @return mixed
+     */
 
     public function __call($name, $arguments) {
         $model = $this->model;
@@ -1231,14 +2571,32 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         throw new ERException('Call to undefined method ' . get_class($model) . '::' . $name . '()');
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Contruit une requête DELETE
+     *
+     * @return boolean
+     */
+
     public function delete() {
         if ($this->belongsToDetails) {
             $modelName = $this->belongsToDetails['model'];
             $referer   = $modelName::find($this->belongsToDetails['referer']);
             return $referer->deleteHasMany(str_replace('Agendaweb\App\Models\\', '', get_class($this->model)) . 's');
         }
-        return false;
+        return FALSE;
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Execute une requête
+     *
+     * @return array | object
+     */
 
     private function run() {
         $model = $this->model;
@@ -1249,9 +2607,12 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
             $this->scopesToExecute = [];
         }
         if (empty($this->orderBy)) {
-            if ($this->first) $this->orderBy($model::getIdentifier(false));
-            elseif ($this->last)
-                    $this->orderByDesc($model::getIdentifier(false));
+            if ($this->first) {
+                $this->orderBy($model::getIdentifier());
+            }
+            elseif ($this->last) {
+                $this->orderByDesc($model::getIdentifier());
+            }
         }
         $this->sqlQuery = $this->buildSelect();
 
@@ -1260,37 +2621,86 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         return $listeObjects;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Extrait les instances dse modèles sélectionné par la requête
+     *
+     * @return array | object
+     */
+
     private function getObjects() {
         $model        = $this->model;
         $listeObjects = [];
         $result       = ERTools::execute($this->sqlQuery, $this->bindParam);
 
         while ($result->next()) {
-            if ($this->lightMode == 0)
-                    $listeObjects[] = self::instantiate($result->row(), get_class($this->model), $this->model->getReadOnly());
-            elseif ($this->lightMode == 2)
-                    $listeObjects[] = array_change_key_case($result->row());
-            else $listeObjects[] = $result->get($model::getIdentifier(false));
+            if ($this->lightMode == 0) {
+                $listeObjects[] = self::instantiate($result->row(), get_class($this->model), $this->model->getReadOnly());
+            }
+            elseif ($this->lightMode == 2) {
+                $listeObjects[] = array_change_key_case($result->row());
+            }
+            else {
+                $listeObjects[] = $result->get($model::getIdentifier());
+            }
         }
         return $listeObjects;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instancie un nouvel objet à partir du résultat d'une requête
+     *
+     * @param array record
+     * @param string class
+     * @param boolean readOnly
+     * @return object
+     */
+
     private static function instantiate($record, $class, $readOnly) {
-        $object = new $class(true);
-        if ($readOnly) $object->readOnly();
+        $object = new $class(TRUE);
+
+        if ($readOnly) {
+            $object->readOnly();
+        }
+
         foreach ($record as $attribut => $value) {
             $object->setAttribute($attribut, $value);
         }
+
         $object->notNew();
         return $object;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Exécute une requête si elle n'a pas été exécutée
+     */
+
     private function runQuery() {
         if (!$this->queryExecuted) {
             $this->results       = $this->run();
-            $this->queryExecuted = true;
+            $this->queryExecuted = TRUE;
         }
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Réassige des relations
+     *
+     * @param string name
+     * @param array arguments
+     * @param array outputArray
+     * @return boolean
+     */
 
     private function addRemoveRelation($name, $arguments, $outputArray) {
         $model  = $this->model;
@@ -1298,51 +2708,78 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         if (in_array($string, $model::hasAndBelongsToMany()) || array_key_exists($string, $model::hasAndBelongsToMany())) {
             if (count($arguments) == 1) {
                 $hasAndBelongsToMany = $this->model->getNamespace() . $string;
-                if ($hasAndBelongsToMany[strlen($hasAndBelongsToMany) - 1] == 's')
-                        $hasAndBelongsToMany = substr($hasAndBelongsToMany, 0, strlen($hasAndBelongsToMany) - 1);
-                $database            = $model::database();
-                if (array_key_exists($string, $model::hasAndBelongsToMany())) {
-                    $infosArray              = $model::hasAndBelongsToMany()[$string];
-                    if (array_key_exists('class_name', $infosArray))
-                            $hasAndBelongsToMany     = $this->model->getNamespace() . $infosArray['class_name'];
-                    if (array_key_exists('inverse_of', $infosArray))
-                            $infosArray              = $hasAndBelongsToMany::hasAndBelongsToMany()[$infosArray['inverse_of']];
-                    if (array_key_exists('association_foreign_key', $infosArray))
-                            $associationCleEtrangere = $infosArray['association_foreign_key'];
-                    if (array_key_exists('foreign_key', $infosArray))
-                            $concatCleEtrangere      = $infosArray['foreign_key'];
-                    if (array_key_exists('table', $infosArray))
-                            $concatTable             = $infosArray['table'];
-                    if (array_key_exists('database', $infosArray))
-                            $database                = $infosArray['database'];
+
+                if ($hasAndBelongsToMany[strlen($hasAndBelongsToMany) - 1] == 's') {
+                    $hasAndBelongsToMany = substr($hasAndBelongsToMany, 0, strlen($hasAndBelongsToMany) - 1);
                 }
-                if (!isset($associationCleEtrangere))
-                        $associationCleEtrangere = $hasAndBelongsToMany::getIdentifier(false);
-                if (!isset($concatCleEtrangere))
-                        $concatCleEtrangere      = $model::getIdentifier(false);
-                $staticTable             = $model::table();
-                $habtmTable              = $hasAndBelongsToMany::table();
-                $objetTable              = $hasAndBelongsToMany::database() . '.' . $habtmTable;
+
+                $database = $model::database();
+                if (array_key_exists($string, $model::hasAndBelongsToMany())) {
+                    $infosArray = $model::hasAndBelongsToMany()[$string];
+
+                    if (array_key_exists('class_name', $infosArray)) {
+                        $hasAndBelongsToMany = $this->model->getNamespace() . $infosArray['class_name'];
+                    }
+
+                    if (array_key_exists('inverse_of', $infosArray)) {
+                        $infosArray = $hasAndBelongsToMany::hasAndBelongsToMany()[$infosArray['inverse_of']];
+                    }
+
+                    if (array_key_exists('association_foreign_key', $infosArray)) {
+                        $associationCleEtrangere = $infosArray['association_foreign_key'];
+                    }
+
+                    if (array_key_exists('foreign_key', $infosArray)) {
+                        $concatCleEtrangere = $infosArray['foreign_key'];
+                    }
+
+                    if (array_key_exists('table', $infosArray)) {
+                        $concatTable = $infosArray['table'];
+                    }
+
+                    if (array_key_exists('database', $infosArray)) {
+                        $database = $infosArray['database'];
+                    }
+                }
+
+                if (!isset($associationCleEtrangere)) {
+                    $associationCleEtrangere = $hasAndBelongsToMany::getIdentifier();
+                }
+
+                if (!isset($concatCleEtrangere)) {
+                    $concatCleEtrangere = $model::getIdentifier();
+                }
+
+                $staticTable = $model::table();
+                $habtmTable  = $hasAndBelongsToMany::table();
+                $objetTable  = $hasAndBelongsToMany::database() . '.' . $habtmTable;
+
                 if (!isset($concatTable)) {
-                    if ($habtmTable < $staticTable)
-                            $concatTable = $habtmTable . '_' . $staticTable;
-                    else $concatTable = $staticTable . '_' . $habtmTable;
+                    if ($habtmTable < $staticTable) {
+                        $concatTable = $habtmTable . '_' . $staticTable;
+                    }
+                    else {
+                        $concatTable = $staticTable . '_' . $habtmTable;
+                    }
                 }
                 $concatTable  = $database . '.' . $concatTable;
-                if (is_object($arguments[0]))
-                        $arguments[0] = $arguments[0]->getIdentifierValue();
+                if (is_object($arguments[0])) {
+                    $arguments[0] = $arguments[0]->getIdentifierValue();
+                }
 
                 $details = ['concatTable' => $concatTable, 'objectId' => $associationCleEtrangere, 'objectValue' => $arguments[0], 'thisId' => $concatCleEtrangere];
                 if (preg_match('/add([\w]*)/', $name, $outputArray)) {
-                    if (!array_key_exists($concatTable, $model->relations()->hasAndBelongsToManyToAdd))
-                            $model->relations()->hasAndBelongsToManyToAdd[$concatTable]                = [];
+                    if (!array_key_exists($concatTable, $model->relations()->hasAndBelongsToManyToAdd)) {
+                        $model->relations()->hasAndBelongsToManyToAdd[$concatTable] = [];
+                    }
                     $model->relations()->hasAndBelongsToManyToAdd[$concatTable][$arguments[0]] = $details;
                 } else {
-                    if (!array_key_exists($concatTable, $model->relations()->hasAndBelongsToManyToRemove))
-                            $model->relations()->hasAndBelongsToManyToRemove[$concatTable]                = [];
+                    if (!array_key_exists($concatTable, $model->relations()->hasAndBelongsToManyToRemove)) {
+                        $model->relations()->hasAndBelongsToManyToRemove[$concatTable] = [];
+                    }
                     $model->relations()->hasAndBelongsToManyToRemove[$concatTable][$arguments[0]] = $details;
                 }
-                return true;
+                return TRUE;
             } else {
                 throw new ERException('EasyRecord::add and EasyRecord::remove on a hasAndBelongsToMany relationship expects exactly 1 parameter, 0 given', 1);
             }
@@ -1350,56 +2787,80 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         elseif (array_key_exists($string, $model::hasMany()) && array_key_exists('through', $model::hasMany()[$string])) {
             if (count($arguments) >= 1) {
                 $hasMany = $this->model->getNamespace() . $string;
-                if ($hasMany[strlen($hasMany) - 1] == 's')
-                        $hasMany = substr($hasMany, 0, strlen($hasMany) - 1);
-                $through = $model::hasMany()[$string]['through'];
-                if ($through[strlen($through) - 1] == 's')
-                        $through = substr($through, 0, strlen($through) - 1);
+                if ($hasMany[strlen($hasMany) - 1] == 's') {
+                    $hasMany = substr($hasMany, 0, strlen($hasMany) - 1);
+                }
 
-                if (is_object($arguments[0]))
-                        $arguments[0] = $arguments[0]->getIdentifierValue();
+                $through = $model::hasMany()[$string]['through'];
+                if ($through[strlen($through) - 1] == 's') {
+                    $through = substr($through, 0, strlen($through) - 1);
+                }
+
+                if (is_object($arguments[0])) {
+                    $arguments[0] = $arguments[0]->getIdentifierValue();
+                }
+
                 if (preg_match('/add([\w]*)/', $name, $outputArray)) {
-                    if (!array_key_exists($through, $model->relations()->hasManyToAdd))
-                            $model->relations()->hasManyToAdd[$through]                = [];
-                    if (!array_key_exists(1, $arguments)) $arguments[1]                                              = [];
+                    if (!array_key_exists($through, $model->relations()->hasManyToAdd)) {
+                        $model->relations()->hasManyToAdd[$through] = [];
+                    }
+                    if (!array_key_exists(1, $arguments)) {
+                        $arguments[1] = [];
+                    }
                     $model->relations()->hasManyToAdd[$through][$arguments[0]] = ['objectClass' => $through, 'relName' => $hasMany, 'relValue' => $arguments[0], 'args' => $arguments[1]];
                 } else {
-                    if (!array_key_exists($through, $model->relations()->hasManyToRemove))
-                            $model->relations()->hasManyToRemove[$through] = [];
+                    if (!array_key_exists($through, $model->relations()->hasManyToRemove)) {
+                        $model->relations()->hasManyToRemove[$through] = [];
+                    }
 
                     $belongsTo = get_class($model);
                     if (array_key_exists($belongsTo, $through::belongsTo())) {
-                        $infosArray            = $through::belongsTo()[$belongsTo];
-                        if (array_key_exists('foreign_key', $infosArray))
-                                $cleEtrangereBelongsTo = $infosArray['foreign_key'];
-                        if (array_key_exists('class_name', $infosArray))
-                                $belongsTo             = $this->model->getNamespace() . $infosArray['class_name'];
-                        if (!isset($cleEtrangereBelongsTo) && array_key_exists('inverse_of', $infosArray))
-                                $cleEtrangereBelongsTo = $belongsTo::hasMany()[$infosArray['inverse_of']]['foreign_key'];
+                        $infosArray = $through::belongsTo()[$belongsTo];
+
+                        if (array_key_exists('foreign_key', $infosArray)) {
+                            $cleEtrangereBelongsTo = $infosArray['foreign_key'];
+                        }
+
+                        if (array_key_exists('class_name', $infosArray)) {
+                            $belongsTo             = $this->model->getNamespace() . $infosArray['class_name'];
+                        }
+
+                        if (!isset($cleEtrangereBelongsTo) && array_key_exists('inverse_of', $infosArray)) {
+                            $cleEtrangereBelongsTo = $belongsTo::hasMany()[$infosArray['inverse_of']]['foreign_key'];
+                        }
                     }
-                    if (!isset($cleEtrangereBelongsTo))
-                            $cleEtrangereBelongsTo = $model::getIdentifier(false);
+
+                    if (!isset($cleEtrangereBelongsTo)) {
+                        $cleEtrangereBelongsTo = $model::getIdentifier();
+                    }
 
                     if (array_key_exists($hasMany, $through::belongsTo())) {
-                        $infosArray          = $through::belongsTo()[$hasMany];
-                        if (array_key_exists('foreign_key', $infosArray))
-                                $cleEtrangereHasMany = $infosArray['foreign_key'];
-                        if (array_key_exists('class_name', $infosArray))
-                                $hasMany             = $this->model->getNamespace() . $infosArray['class_name'];
-                        if (!isset($cleEtrangereHasMany) && array_key_exists('inverse_of', $infosArray))
-                                $cleEtrangereHasMany = $hasMany::hasMany()[$infosArray['inverse_of']]['foreign_key'];
+                        $infosArray = $through::belongsTo()[$hasMany];
+
+                        if (array_key_exists('foreign_key', $infosArray)) {
+                            $cleEtrangereHasMany = $infosArray['foreign_key'];
+                        }
+
+                        if (array_key_exists('class_name', $infosArray)) {
+                            $hasMany             = $this->model->getNamespace() . $infosArray['class_name'];
+                        }
+
+                        if (!isset($cleEtrangereHasMany) && array_key_exists('inverse_of', $infosArray)) {
+                            $cleEtrangereHasMany = $hasMany::hasMany()[$infosArray['inverse_of']]['foreign_key'];
+                        }
                     }
-                    if (!isset($cleEtrangereHasMany))
-                            $cleEtrangereHasMany                                          = $hasMany::getIdentifier(false);
+                    if (!isset($cleEtrangereHasMany)) {
+                        $cleEtrangereHasMany = $hasMany::getIdentifier();
+                    }
+
                     $model->relations()->hasManyToRemove[$through][$arguments[0]] = ['objectClass' => $through, 'hasManyKey' => $cleEtrangereHasMany, 'belongsToKey' => $cleEtrangereBelongsTo, 'hasManyValue' => $arguments[0]];
                 }
-                return true;
+                return TRUE;
             } else {
                 throw new ERException('EasyRecord::add and EasyRecord::remove on a hasMany relationship expects at least 1 parameter, 0 given', 1);
             }
         }
     }
-
 }
 
 /* End of file */

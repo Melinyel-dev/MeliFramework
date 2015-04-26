@@ -2,9 +2,9 @@
 
 namespace Orb\Date;
 
-use \InvalidArgumentException;
 use \DateTime;
 use \DateTimeZone;
+use \InvalidArgumentException;
 
 /*
  * This file is part of the Carbon package.
@@ -33,9 +33,9 @@ use \DateTimeZone;
  * @property-read integer $quarter the quarter of this instance, 1 - 4
  * @property-read integer $offset the timezone offset in seconds from UTC
  * @property-read integer $offsetHours the timezone offset in hours from UTC
- * @property-read boolean $dst daylight savings time indicator, true if DST, false otherwise
- * @property-read boolean $local checks if the timezone is local, true if local, false otherwise
- * @property-read boolean $utc checks if the timezone is UTC, true if UTC, false otherwise
+ * @property-read boolean $dst daylight savings time indicator, TRUE if DST, FALSE otherwise
+ * @property-read boolean $local checks if the timezone is local, TRUE if local, FALSE otherwise
+ * @property-read boolean $utc checks if the timezone is UTC, TRUE if UTC, FALSE otherwise
  * @property-read string  $timezoneName
  * @property-read string  $tzName
  *
@@ -217,7 +217,7 @@ class Carbon extends DateTimeFrench {
 
         $tz = @timezone_open((string) $object);
 
-        if ($tz === false) {
+        if ($tz === FALSE) {
             throw new InvalidArgumentException('Unknown or bad timezone (' . $object . ')');
         }
 
@@ -237,7 +237,7 @@ class Carbon extends DateTimeFrench {
      * @param string              $time
      * @param DateTimeZone|string $tz
      */
-    public function __construct($time = null, $tz = null) {
+    public function __construct($time = NULL, $tz = NULL) {
         // If the class has a test now set and we are trying to create a now()
         // instance then override as required
         if (static::hasTestNow() && (empty($time) || $time === 'now' || self::hasRelativeKeywords($time))) {
@@ -256,14 +256,14 @@ class Carbon extends DateTimeFrench {
             $time = $testInstance->toDateTimeSql();
         }
 
-        if ($tz !== null) {
+        if ($tz !== NULL) {
             parent::__construct($time, self::safeCreateDateTimeZone($tz));
         } else {
             parent::__construct($time);
         }
     }
 
-    public static function date($time = null, $tz = null) {
+    public static function date($time = NULL, $tz = NULL) {
         return new Carbon($time, $tz);
     }
 
@@ -294,7 +294,7 @@ class Carbon extends DateTimeFrench {
      *
      * @return Carbon
      */
-    public static function parse($time = null, $tz = null) {
+    public static function parse($time = NULL, $tz = NULL) {
         return new static($time, $tz);
     }
 
@@ -305,8 +305,8 @@ class Carbon extends DateTimeFrench {
      *
      * @return Carbon
      */
-    public static function now($tz = null) {
-        return new static(null, $tz);
+    public static function now($tz = NULL) {
+        return new static(NULL, $tz);
     }
 
     /**
@@ -316,7 +316,7 @@ class Carbon extends DateTimeFrench {
      *
      * @return Carbon
      */
-    public static function today($tz = null) {
+    public static function today($tz = NULL) {
         return static::now($tz)->startOfDay();
     }
 
@@ -327,7 +327,7 @@ class Carbon extends DateTimeFrench {
      *
      * @return Carbon
      */
-    public static function tomorrow($tz = null) {
+    public static function tomorrow($tz = NULL) {
         return static::today($tz)->addDay();
     }
 
@@ -338,19 +338,19 @@ class Carbon extends DateTimeFrench {
      *
      * @return Carbon
      */
-    public static function yesterday($tz = null) {
+    public static function yesterday($tz = NULL) {
         return static::today($tz)->subDay();
     }
 
     /**
      * Create a new Carbon instance from a specific date and time.
      *
-     * If any of $year, $month or $day are set to null their now() values
+     * If any of $year, $month or $day are set to NULL their now() values
      * will be used.
      *
-     * If $hour is null it will be set to its now() value and the default values
+     * If $hour is NULL it will be set to its now() value and the default values
      * for $minute and $second will be their now() values.
-     * If $hour is not null then the default values for $minute and $second
+     * If $hour is not NULL then the default values for $minute and $second
      * will be 0.
      *
      * @param  integer             $year
@@ -363,18 +363,18 @@ class Carbon extends DateTimeFrench {
      *
      * @return Carbon
      */
-    public static function create($year = null, $month = null, $day = null, $hour = null, $minute = null, $second = null, $tz = null) {
-        $year  = ($year === null) ? date('Y') : $year;
-        $month = ($month === null) ? date('n') : $month;
-        $day   = ($day === null) ? date('j') : $day;
+    public static function create($year = NULL, $month = NULL, $day = NULL, $hour = NULL, $minute = NULL, $second = NULL, $tz = NULL) {
+        $year  = ($year === NULL) ? date('Y') : $year;
+        $month = ($month === NULL) ? date('n') : $month;
+        $day   = ($day === NULL) ? date('j') : $day;
 
-        if ($hour === null) {
+        if ($hour === NULL) {
             $hour   = date('G');
-            $minute = ($minute === null) ? date('i') : $minute;
-            $second = ($second === null) ? date('s') : $second;
+            $minute = ($minute === NULL) ? date('i') : $minute;
+            $second = ($second === NULL) ? date('s') : $second;
         } else {
-            $minute = ($minute === null) ? 0 : $minute;
-            $second = ($second === null) ? 0 : $second;
+            $minute = ($minute === NULL) ? 0 : $minute;
+            $second = ($second === NULL) ? 0 : $second;
         }
 
         return self::createFromFormat('Y-n-j G:i:s', sprintf('%s-%s-%s %s:%02s:%02s', $year, $month, $day, $hour, $minute, $second), $tz);
@@ -390,8 +390,8 @@ class Carbon extends DateTimeFrench {
      *
      * @return Carbon
      */
-    public static function createFromDate($year = null, $month = null, $day = null, $tz = null) {
-        return self::create($year, $month, $day, null, null, null, $tz);
+    public static function createFromDate($year = NULL, $month = NULL, $day = NULL, $tz = NULL) {
+        return self::create($year, $month, $day, NULL, NULL, NULL, $tz);
     }
 
     /**
@@ -404,8 +404,8 @@ class Carbon extends DateTimeFrench {
      *
      * @return Carbon
      */
-    public static function createFromTime($hour = null, $minute = null, $second = null, $tz = null) {
-        return self::create(null, null, null, $hour, $minute, $second, $tz);
+    public static function createFromTime($hour = NULL, $minute = NULL, $second = NULL, $tz = NULL) {
+        return self::create(NULL, NULL, NULL, $hour, $minute, $second, $tz);
     }
 
     /**
@@ -419,8 +419,8 @@ class Carbon extends DateTimeFrench {
      *
      * @throws InvalidArgumentException
      */
-    public static function createFromFormat($format, $time, $tz = null) {
-        if ($tz !== null) {
+    public static function createFromFormat($format, $time, $tz = NULL) {
+        if ($tz !== NULL) {
             $dt = parent::createFromFormat($format, $time, self::safeCreateDateTimeZone($tz));
         } else {
             $dt = parent::createFromFormat($format, $time);
@@ -442,7 +442,7 @@ class Carbon extends DateTimeFrench {
      *
      * @return Carbon
      */
-    public static function createFromTimestamp($timestamp, $tz = null) {
+    public static function createFromTimestamp($timestamp, $tz = NULL) {
         return self::now($tz)->setTimestamp($timestamp);
     }
 
@@ -568,10 +568,10 @@ class Carbon extends DateTimeFrench {
         try {
             $this->__get($name);
         } catch (InvalidArgumentException $e) {
-            return false;
+            return FALSE;
         }
 
-        return true;
+        return TRUE;
     }
 
     /**
@@ -799,18 +799,18 @@ class Carbon extends DateTimeFrench {
      * instance is created.  The provided instance will be returned
      * specifically under the following conditions:
      *   - A call to the static now() method, ex. Carbon::now()
-     *   - When a null (or blank string) is passed to the constructor or parse(), ex. new Carbon(null)
+     *   - When a NULL (or blank string) is passed to the constructor or parse(), ex. new Carbon(NULL)
      *   - When the string "now" is passed to the constructor or parse(), ex. new Carbon('now')
      *
      * Note the timezone parameter was left out of the examples above and
      * has no affect as the mock value will be returned regardless of its value.
      *
      * To clear the test instance call this method using the default
-     * parameter of null.
+     * parameter of NULL.
      *
      * @param Carbon $testNow
      */
-    public static function setTestNow(Carbon $testNow = null) {
+    public static function setTestNow(Carbon $testNow = NULL) {
         static::$testNow = $testNow;
     }
 
@@ -826,12 +826,12 @@ class Carbon extends DateTimeFrench {
 
     /**
      * Determine if there is a valid test instance set. A valid test instance
-     * is anything that is not null.
+     * is anything that is not NULL.
      *
-     * @return boolean true if there is a test instance, otherwise false
+     * @return boolean TRUE if there is a test instance, otherwise FALSE
      */
     public static function hasTestNow() {
-        return static::getTestNow() !== null;
+        return static::getTestNow() !== NULL;
     }
 
     /**
@@ -840,21 +840,21 @@ class Carbon extends DateTimeFrench {
      *
      * @param string $time
      *
-     * @return boolean true if there is a keyword, otherwise false
+     * @return boolean TRUE if there is a keyword, otherwise FALSE
      */
     public static function hasRelativeKeywords($time) {
         // skip common format with a '-' in it
         if (preg_match('/[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}/', $time) === 1) {
-            return false;
+            return FALSE;
         }
 
         foreach (self::$relativeKeywords as $keyword) {
-            if (stripos($time, $keyword) !== false) {
-                return true;
+            if (stripos($time, $keyword) !== FALSE) {
+                return TRUE;
             }
         }
 
-        return false;
+        return FALSE;
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -1165,7 +1165,7 @@ class Carbon extends DateTimeFrench {
      *
      * @return boolean
      */
-    public function between(Carbon $dt1, Carbon $dt2, $equal = true) {
+    public function between(Carbon $dt1, Carbon $dt2, $equal = TRUE) {
         if ($dt1->gt($dt2)) {
             $temp = $dt1;
             $dt1  = $dt2;
@@ -1186,8 +1186,8 @@ class Carbon extends DateTimeFrench {
      *
      * @return Carbon
      */
-    public function min(Carbon $dt = null) {
-        $dt = ($dt === null) ? static::now($this->tz) : $dt;
+    public function min(Carbon $dt = NULL) {
+        $dt = ($dt === NULL) ? static::now($this->tz) : $dt;
 
         return $this->lt($dt) ? $this : $dt;
     }
@@ -1199,8 +1199,8 @@ class Carbon extends DateTimeFrench {
      *
      * @return Carbon
      */
-    public function max(Carbon $dt = null) {
-        $dt = ($dt === null) ? static::now($this->tz) : $dt;
+    public function max(Carbon $dt = NULL) {
+        $dt = ($dt === NULL) ? static::now($this->tz) : $dt;
 
         return $this->gt($dt) ? $this : $dt;
     }
@@ -1264,7 +1264,7 @@ class Carbon extends DateTimeFrench {
      *
      * @return boolean
      */
-    public function isPast($midnight = false) {
+    public function isPast($midnight = FALSE) {
         if ($midnight) return $this->lt(self::now($this->tz)->startOfDay());
         else return $this->lt(self::now($this->tz));
     }
@@ -1622,8 +1622,8 @@ class Carbon extends DateTimeFrench {
      *
      * @return integer
      */
-    public function diffInYears(Carbon $dt = null, $abs = true) {
-        $dt = ($dt === null) ? static::now($this->tz) : $dt;
+    public function diffInYears(Carbon $dt = NULL, $abs = TRUE) {
+        $dt = ($dt === NULL) ? static::now($this->tz) : $dt;
 
         return intval($this->diff($dt, $abs)->format('%r%y'));
     }
@@ -1636,8 +1636,8 @@ class Carbon extends DateTimeFrench {
      *
      * @return integer
      */
-    public function diffInMonths(Carbon $dt = null, $abs = true) {
-        $dt = ($dt === null) ? static::now($this->tz) : $dt;
+    public function diffInMonths(Carbon $dt = NULL, $abs = TRUE) {
+        $dt = ($dt === NULL) ? static::now($this->tz) : $dt;
 
         return $this->diffInYears($dt, $abs) * self::MONTHS_PER_YEAR + $this->diff($dt, $abs)->format('%r%m');
     }
@@ -1650,8 +1650,8 @@ class Carbon extends DateTimeFrench {
      *
      * @return integer
      */
-    public function diffInDays(Carbon $dt = null, $abs = true) {
-        $dt = ($dt === null) ? static::now($this->tz) : $dt;
+    public function diffInDays(Carbon $dt = NULL, $abs = TRUE) {
+        $dt = ($dt === NULL) ? static::now($this->tz) : $dt;
 
         return intval($this->diff($dt, $abs)->format('%r%a'));
     }
@@ -1664,8 +1664,8 @@ class Carbon extends DateTimeFrench {
      *
      * @return integer
      */
-    public function diffInHours(Carbon $dt = null, $abs = true) {
-        $dt = ($dt === null) ? static::now($this->tz) : $dt;
+    public function diffInHours(Carbon $dt = NULL, $abs = TRUE) {
+        $dt = ($dt === NULL) ? static::now($this->tz) : $dt;
 
         return intval($this->diffInMinutes($dt, $abs) / self::MINUTES_PER_HOUR);
     }
@@ -1678,8 +1678,8 @@ class Carbon extends DateTimeFrench {
      *
      * @return integer
      */
-    public function diffInMinutes(Carbon $dt = null, $abs = true) {
-        $dt = ($dt === null) ? static::now($this->tz) : $dt;
+    public function diffInMinutes(Carbon $dt = NULL, $abs = TRUE) {
+        $dt = ($dt === NULL) ? static::now($this->tz) : $dt;
 
         return intval($this->diffInSeconds($dt, $abs) / self::SECONDS_PER_MINUTE);
     }
@@ -1692,8 +1692,8 @@ class Carbon extends DateTimeFrench {
      *
      * @return integer
      */
-    public function diffInSeconds(Carbon $dt = null, $abs = true) {
-        $dt = ($dt === null) ? static::now($this->tz) : $dt;
+    public function diffInSeconds(Carbon $dt = NULL, $abs = TRUE) {
+        $dt = ($dt === NULL) ? static::now($this->tz) : $dt;
 
         $value = $dt->getTimestamp() - $this->getTimestamp();
 
@@ -1723,8 +1723,8 @@ class Carbon extends DateTimeFrench {
      *
      * @return string
      */
-    public function diffForHumans(Carbon $other = null) {
-        $isNow = $other === null;
+    public function diffForHumans(Carbon $other = NULL) {
+        $isNow = $other === NULL;
 
         if ($isNow) {
             $other = static::now($this->tz);
@@ -1903,10 +1903,10 @@ class Carbon extends DateTimeFrench {
      *
      * @return mixed
      */
-    public function next($dayOfWeek = null) {
+    public function next($dayOfWeek = NULL) {
         $this->startOfDay();
 
-        if ($dayOfWeek === null) {
+        if ($dayOfWeek === NULL) {
             $dayOfWeek = $this->dayOfWeek;
         }
 
@@ -1923,10 +1923,10 @@ class Carbon extends DateTimeFrench {
      *
      * @return mixed
      */
-    public function previous($dayOfWeek = null) {
+    public function previous($dayOfWeek = NULL) {
         $this->startOfDay();
 
-        if ($dayOfWeek === null) {
+        if ($dayOfWeek === NULL) {
             $dayOfWeek = $this->dayOfWeek;
         }
 
@@ -1943,10 +1943,10 @@ class Carbon extends DateTimeFrench {
      *
      * @return mixed
      */
-    public function firstOfMonth($dayOfWeek = null) {
+    public function firstOfMonth($dayOfWeek = NULL) {
         $this->startOfDay();
 
-        if ($dayOfWeek === null) {
+        if ($dayOfWeek === NULL) {
             return $this->day(1);
         }
 
@@ -1963,10 +1963,10 @@ class Carbon extends DateTimeFrench {
      *
      * @return mixed
      */
-    public function lastOfMonth($dayOfWeek = null) {
+    public function lastOfMonth($dayOfWeek = NULL) {
         $this->startOfDay();
 
-        if ($dayOfWeek === null) {
+        if ($dayOfWeek === NULL) {
             return $this->day($this->daysInMonth);
         }
 
@@ -1976,7 +1976,7 @@ class Carbon extends DateTimeFrench {
     /**
      * Modify to the given occurance of a given day of the week
      * in the current month. If the calculated occurance is outside the scope
-     * of the current month, then return false and no modifications are made.
+     * of the current month, then return FALSE and no modifications are made.
      * Use the supplied consts to indicate the desired dayOfWeek, ex. static::MONDAY.
      *
      * @param  int  $nth
@@ -1992,7 +1992,7 @@ class Carbon extends DateTimeFrench {
         $dt->modify('+' . $nth . ' ' . self::$days[$dayOfWeek]);
 
         if ($month !== $dt->month || $year !== $dt->year) {
-            return false;
+            return FALSE;
         }
 
         return $this->modify($dt);
@@ -2008,7 +2008,7 @@ class Carbon extends DateTimeFrench {
      *
      * @return mixed
      */
-    public function firstOfQuarter($dayOfWeek = null) {
+    public function firstOfQuarter($dayOfWeek = NULL) {
         $this->month(($this->quarter * 3) - 2);
 
         return $this->firstOfMonth($dayOfWeek);
@@ -2024,7 +2024,7 @@ class Carbon extends DateTimeFrench {
      *
      * @return mixed
      */
-    public function lastOfQuarter($dayOfWeek = null) {
+    public function lastOfQuarter($dayOfWeek = NULL) {
         $this->month(($this->quarter * 3));
 
         return $this->lastOfMonth($dayOfWeek);
@@ -2033,7 +2033,7 @@ class Carbon extends DateTimeFrench {
     /**
      * Modify to the given occurance of a given day of the week
      * in the current quarter. If the calculated occurance is outside the scope
-     * of the current quarter, then return false and no modifications are made.
+     * of the current quarter, then return FALSE and no modifications are made.
      * Use the supplied consts to indicate the desired dayOfWeek, ex. static::MONDAY.
      *
      * @param  int  $nth
@@ -2050,7 +2050,7 @@ class Carbon extends DateTimeFrench {
         $dt->modify('+' . $nth . ' ' . self::$days[$dayOfWeek]);
 
         if ($last_month < $dt->month || $year !== $dt->year) {
-            return false;
+            return FALSE;
         }
 
         return $this->modify($dt);
@@ -2066,7 +2066,7 @@ class Carbon extends DateTimeFrench {
      *
      * @return mixed
      */
-    public function firstOfYear($dayOfWeek = null) {
+    public function firstOfYear($dayOfWeek = NULL) {
         $this->month(1);
 
         return $this->firstOfMonth($dayOfWeek);
@@ -2082,7 +2082,7 @@ class Carbon extends DateTimeFrench {
      *
      * @return mixed
      */
-    public function lastOfYear($dayOfWeek = null) {
+    public function lastOfYear($dayOfWeek = NULL) {
         $this->month(self::MONTHS_PER_YEAR);
 
         return $this->lastOfMonth($dayOfWeek);
@@ -2091,7 +2091,7 @@ class Carbon extends DateTimeFrench {
     /**
      * Modify to the given occurance of a given day of the week
      * in the current year. If the calculated occurance is outside the scope
-     * of the current year, then return false and no modifications are made.
+     * of the current year, then return FALSE and no modifications are made.
      * Use the supplied consts to indicate the desired dayOfWeek, ex. static::MONDAY.
      *
      * @param  int  $nth
@@ -2106,7 +2106,7 @@ class Carbon extends DateTimeFrench {
         $dt->modify('+' . $nth . ' ' . self::$days[$dayOfWeek]);
 
         if ($year !== $dt->year) {
-            return false;
+            return FALSE;
         }
 
         return $this->modify($dt);
@@ -2119,10 +2119,10 @@ class Carbon extends DateTimeFrench {
      *
      * @return Carbon
      */
-    public function average(Carbon $dt = null) {
-        $dt = ($dt === null) ? static::now($this->tz) : $dt;
+    public function average(Carbon $dt = NULL) {
+        $dt = ($dt === NULL) ? static::now($this->tz) : $dt;
 
-        return $this->addSeconds(intval($this->diffInSeconds($dt, false) / 2));
+        return $this->addSeconds(intval($this->diffInSeconds($dt, FALSE) / 2));
     }
 
 }

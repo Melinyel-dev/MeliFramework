@@ -1,11 +1,11 @@
 <?php
 
-namespace Orb\File;
+namespace System\Helpers;
 
 /**
  * Description of Image
  *
- * @author mathieu
+ * @author sugatasei
  */
 class File {
 
@@ -16,7 +16,7 @@ class File {
     protected $path = NULL;
 
     // -------------------------------------------------------------------------
-    
+
     /**
      * Class constructor
      * @param string $path
@@ -26,7 +26,7 @@ class File {
     }
 
     // -------------------------------------------------------------------------
-    
+
     /**
      * Init the path variable
      * @param string $path
@@ -40,7 +40,7 @@ class File {
     }
 
     // -------------------------------------------------------------------------
-    
+
     /**
      * Check if the file exists
      * @return boolean
@@ -50,7 +50,7 @@ class File {
     }
 
     // -------------------------------------------------------------------------
-    
+
     /**
      * Copy the file
      * @param string $to
@@ -63,7 +63,7 @@ class File {
 
         return FALSE;
     }
-    
+
     // -------------------------------------------------------------------------
 
     /**
@@ -79,7 +79,7 @@ class File {
 
         return FALSE;
     }
-    
+
     // -------------------------------------------------------------------------
 
     /**
@@ -94,14 +94,14 @@ class File {
 
         return FALSE;
     }
-    
+
     // -------------------------------------------------------------------------
 
     protected function create($path) {
         $current = get_class($this);
         return new $current($path);
     }
-    
+
     // -------------------------------------------------------------------------
 }
 

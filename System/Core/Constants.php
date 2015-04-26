@@ -1,25 +1,62 @@
 <?php
 
-defined('REP_BASE') || define('REP_BASE', (getenv('APPLICATION_REP_BASE') ? getenv('APPLICATION_REP_BASE') : '/home/prod/'));
+/**
+ *  Constantes du noyau
+ */
 
-define('BASE_URL',dirname(dirname($_SERVER['SCRIPT_NAME'])));
-define('APP',ROOT.DS.'Apps');
-define('CFG',ROOT.DS.'Config');
+define('FRAMEWORK', 'MeliFramework');
+define('FRAMEWORK_VERSION', '1.0');
 
-define('CORE_APP', APP.DS.'Core');
-define('CONTROLLERS', APP.DS.'Controllers');
-define('HELPERS', APP.DS.'Helpers');
-define('HOOKS', APP.DS.'Hooks');
-define('LIBRARIES', SYS.DS.'Libs');
-define('ORM', SYS.DS.'Orm');
-define('MODELS', APP.DS.'Models');
-define('MAPPING', MODELS.DS.'Mapping');
-define('VIEWS', APP.DS.'Views');
-define('DYN',WEBROOT.DS.'public');
-define('CACHE_DIR',DYN.DS.'cache');
-define('CSS_DIR',WEBROOT.DS.'css');
-define('JS_DIR',WEBROOT.DS.'js');
 
-define('SITE_ID', 0);
 
-/*  EOF  */
+/**
+ *  Définitions des constantes des chemins d'accès système
+ */
+
+// Répertoire de configuration
+define('CFG', ROOT . DS . 'Config');
+
+// Répertoire de l'application
+define('APP', ROOT . DS . 'Apps');
+
+
+
+// Répertoire des librairies systèmes
+define('LIBRARIES', SYS . DS . 'Libs');
+
+// Répertoire de l'ORM
+define('ORM', SYS . DS . 'Orm');
+
+
+
+// Répertoire des controllers
+define('CONTROLLERS', APP . DS . 'Controllers');
+
+// Répertoire des helpers
+define('HELPERS', APP . DS . 'Helpers');
+
+// Répertoire des hooks
+define('HOOKS', APP . DS . 'Hooks');
+
+// Répertoire des modèles
+define('MODELS', APP . DS . 'Models');
+
+// Répertoire des vues
+define('VIEWS', APP . DS . 'Views');
+
+
+
+// Répertoire des ressources dynamiques
+define('DYN', WEBROOT . DS . 'public');
+
+// Répertoire du cache des ressources dynamiques
+define('CACHE_DIR', DYN . DS . 'cache');
+
+// Répertoire des ressources CSS
+define('CSS_DIR', WEBROOT . DS . 'css');
+
+// Répertoire des ressources JavaScript
+define('JS_DIR', WEBROOT . DS . 'js');
+
+
+/* End of file */

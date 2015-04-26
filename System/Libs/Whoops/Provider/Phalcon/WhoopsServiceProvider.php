@@ -16,7 +16,7 @@ class WhoopsServiceProvider
     /**
      * @param DI $di
      */
-    public function __construct(DI $di = null)
+    public function __construct(DI $di = NULL)
     {
         if (!$di) {
             $di = DI::getDefault();

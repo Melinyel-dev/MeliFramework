@@ -23,7 +23,7 @@ use Orb\Security\Encrypt;
  * KEY `SEARCH_INDEX` (`SEARCH`)
  * ) ENGINE=InnoDB DEFAULT CHARSET=utf8
  *
- * @author mathieu
+ * @author sugatasei
  */
 class ERSession {
 

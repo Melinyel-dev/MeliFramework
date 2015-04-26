@@ -36,7 +36,7 @@
                 </div>
 
               <span class="frame-file">
-                <?php echo ($frame->getFile(true) ?: '<#unknown>') ?><!--
+                <?php echo ($frame->getFile(TRUE) ?: '<#unknown>') ?><!--
              --><span class="frame-line"><?php echo (int) $frame->getLine() ?></span>
               </span>
             </div>
@@ -84,7 +84,7 @@
                   </div>
                   <?php
                     // Do nothing if there's no line to work off
-                    if($line !== null):
+                    if($line !== NULL):
 
                     // the $line is 1-indexed, we nab -1 where needed to account for this
                     $range = $frame->getFileLines($line - 8, 10);
@@ -111,7 +111,7 @@
                       ?>
                       <div class="frame-comment" id="comment-<?php echo $i . '-' . $commentNo ?>">
                         <span class="frame-comment-context"><?php echo $e($context) ?></span>
-                        <?php echo $e($comment, true) ?>
+                        <?php echo $e($comment, TRUE) ?>
                       </div>
                     <?php endforeach ?>
                   </div>
@@ -137,7 +137,7 @@
                       <?php foreach($data as $k => $value): ?>
                         <tr>
                           <td><?php echo $e($k) ?></td>
-                          <td><?php echo is_array($value) ? '<pre>'.$e(print_r($value, true)).'</pre>' :  $e(print_r($value, true)) ?></td>
+                          <td><?php echo is_array($value) ? '<pre>'.$e(print_r($value, TRUE)).'</pre>' :  $e(print_r($value, TRUE)) ?></td>
                         </tr>
                       <?php endforeach ?>
                       </table>

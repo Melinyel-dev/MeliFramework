@@ -1,18 +1,18 @@
 <?php
 
-namespace Orb\Http;
+namespace System\Helpers;
 
 /**
  * Cookie class
  *
- * @author mathieu
+ * @author sugatasei
  */
 class Cookie {
 
     /**
      * Default configuration for cookies
-     * 
-     * @var array 
+     *
+     * @var array
      */
     private static $config = [
         'prefix' => '',
@@ -25,7 +25,7 @@ class Cookie {
 
     /**
      * Set the default configuration
-     * 
+     *
      * @param array $conf
      */
     public static function setConf(array $conf) {
@@ -36,8 +36,8 @@ class Cookie {
 
     /**
      * Returns a default configuration
-     * 
-     * @param string|null $key
+     *
+     * @param string|NULL $key
      * @param mixed $default
      * @return mixed
      */
@@ -53,7 +53,7 @@ class Cookie {
 
     /**
      * Fetch an item from the COOKIE array
-     * 
+     *
      * @param string $key
      * @param mixed $default
      * @return mixed
@@ -68,10 +68,10 @@ class Cookie {
 
     /**
      * Create a new cookie
-     * 
+     *
      * @param string $name
      * @param mixed $value
-     * @param int|null $expire
+     * @param int|NULL $expire
      * @param array $confCookie
      */
     public static function set($name, $value, $expire = NULL, array $confCookie = []) {
@@ -105,7 +105,7 @@ class Cookie {
 
     /**
      * Create a new cookie for ever
-     * 
+     *
      * @param string $name
      * @param string $value
      * @param array $confCookie
@@ -118,9 +118,9 @@ class Cookie {
 
     /**
      * Delete a cookie
-     * 
+     *
      * This method is a shortcut to the setCookie
-     * 
+     *
      * @param type $name
      * @param array $confCookie
      */

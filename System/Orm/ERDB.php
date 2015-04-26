@@ -14,7 +14,7 @@ if (!defined('ERROR_LEVEL_MYSQL')) {
  * Manage database connections
  * Manage database queries
  *
- * @author mathieu
+ * @author sugatasei
  */
 class ERDB {
 
@@ -85,7 +85,7 @@ class ERDB {
 
         // New object
         self::$instance[$key] = new static($db);
-        
+
         return self::$instance[$key];
     }
 
@@ -156,7 +156,7 @@ class ERDB {
      */
     public function query($query, ERBindParam $param = NULL) {
 
-        $startTimeQuery = microtime(true) * 1000;
+        $startTimeQuery = microtime(TRUE) * 1000;
 
         $result = FALSE;
         $errno  = FALSE;
@@ -164,7 +164,7 @@ class ERDB {
         $this->lastQuery = [$query, $param];
 
         $stmt = $this->db->prepare($query);
-        
+
         if($this->db->errno) {
             throw new \mysqli_sql_exception("MySQL error (#{$this->db->errno}) : {$this->db->error})\n Request: {$this->lastQuery()}", ERROR_LEVEL_MYSQL);
         }
@@ -195,7 +195,7 @@ class ERDB {
 
         $stmt->close();
 
-        $timeQuery = (microtime(true) * 1000) - $startTimeQuery;
+        $timeQuery = (microtime(TRUE) * 1000) - $startTimeQuery;
 
         Profiler::query([$this->lastQuery(), $timeQuery]);
 
@@ -207,7 +207,7 @@ class ERDB {
     /**
      * Returns last insert ID
      *
-     * @return int|false
+     * @return int|FALSE
      */
     public function lastId() {
         return $this->db->insert_id ? $this->db->insert_id : FALSE;
@@ -282,7 +282,7 @@ class ERDB {
 
     /**
      * Escape a string
-     * 
+     *
      * @param string $str
      * @return string
      */

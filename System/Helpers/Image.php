@@ -5,7 +5,7 @@ namespace Orb\File;
 /**
  * Description of Image
  *
- * @author mathieu
+ * @author sugatasei
  */
 class Image extends File {
 
@@ -17,20 +17,20 @@ class Image extends File {
 
     /**
      * Max width
-     * @var int 
+     * @var int
      */
     protected $maxWidth = 1024;
 
     /**
      * Max height
-     * @var int 
+     * @var int
      */
     protected $maxHeight = 768;
 
     /**
      * Limit of pixels to be considered as a thumbnail
      * Details : 300 * 225 - 1 = 67499
-     * @var int 
+     * @var int
      */
     protected $thumbSizeLimit = 67499;
 
@@ -248,7 +248,7 @@ class Image extends File {
     // -------------------------------------------------------------------------
 
     /**
-     * 
+     *
      * @param \Agendaweb\Core\Helpers\Image $img
      * @param int $x
      * @param int $y

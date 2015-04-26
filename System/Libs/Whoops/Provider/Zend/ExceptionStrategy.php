@@ -45,7 +45,7 @@ class ExceptionStrategy extends BaseExceptionStrategy {
             default:
                 $response = $event->getResponse();
                 if (!$response || $response->getStatusCode() === 200) {
-                    header('HTTP/1.0 500 Internal Server Error', true, 500);
+                    header('HTTP/1.0 500 Internal Server Error', TRUE, 500);
                 }
                 ob_clean();
                 $this->run->handleException($event->getParam('exception'));

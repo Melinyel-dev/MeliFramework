@@ -60,7 +60,7 @@ class Inspector
      */
     public function getFrames()
     {
-        if($this->frames === null) {
+        if($this->frames === NULL) {
             $frames = $this->exception->getTrace();
 
             // If we're handling an ErrorException thrown by Whoops,
@@ -108,7 +108,7 @@ class Inspector
         return array(
             'file'  => $exception->getFile(),
             'line'  => $exception->getLine(),
-            'class' => null,
+            'class' => NULL,
             'args'  => array()
         );
     }

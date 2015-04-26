@@ -1,14 +1,40 @@
 <?php
 
-namespace Orb\Date;
+namespace System\Helpers;
+
+
+/**
+ * ArrayHelper Class
+ *
+ * Helper pour manipuler les tableaux
+ *
+ * @author sugatasei
+ */
 
 class Bench {
 
     private static $marks = [];
 
+
+    /**
+     * Ajoute un marqueur de temps
+     *
+     * @param string label
+     */
+
     public static function mark($label) {
         self::$marks[] = [$label, microtime(TRUE)];
     }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Retourne un tableau de tous les marqueurs de temps
+     *
+     * @param int unit
+     * @return array
+     */
 
     public static function times($unit = 1) {
 
@@ -36,5 +62,4 @@ class Bench {
 
         return $times;
     }
-
 }

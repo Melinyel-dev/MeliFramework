@@ -5,7 +5,7 @@ namespace System\Helpers;
 /**
  * Help to work with texts
  *
- * @author mathieu
+ * @author sugatasei
  */
 class Text {
 
@@ -84,7 +84,7 @@ class Text {
 
     /**
      * Explode a string and trim all elements
-     * 
+     *
      * @param string $char
      * @param string $str
      * @return array
@@ -103,8 +103,8 @@ class Text {
     /**
      * Code Highlighter : Colorizes code strings
      *
-     * @param	string	the text string
-     * @return	string
+     * @param   string  the text string
+     * @return  string
      */
     public static function highlightCode($str) {
         // The highlight string function encodes and highlights
@@ -138,11 +138,11 @@ class Text {
     /**
      * Phrase Highlighter : Highlights a phrase within a text string
      *
-     * @param	string	the text string
-     * @param	string	the phrase you'd like to highlight
-     * @param	string	the openging tag to precede the phrase with
-     * @param	string	the closing tag to end the phrase with
-     * @return	string
+     * @param   string  the text string
+     * @param   string  the phrase you'd like to highlight
+     * @param   string  the openging tag to precede the phrase with
+     * @param   string  the closing tag to end the phrase with
+     * @return  string
      */
     public static function highlightPhrase($str, $phrase, $tag_open = '<strong>', $tag_close = '</strong>') {
         if ($str == '') {

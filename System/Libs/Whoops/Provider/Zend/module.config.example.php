@@ -8,13 +8,13 @@
 
 return array(
     'view_manager' => array(
-    	'editor' => 'sublime',
-        'display_not_found_reason' => true,
-        'display_exceptions' => true,
+        'editor' => 'sublime',
+        'display_not_found_reason' => TRUE,
+        'display_exceptions' => TRUE,
         'json_exceptions' => array(
-            'display' => true,
-            'ajax_only' => true,
-            'show_trace' => true
+            'display' => TRUE,
+            'ajax_only' => TRUE,
+            'show_trace' => TRUE
         )
     ),
 );

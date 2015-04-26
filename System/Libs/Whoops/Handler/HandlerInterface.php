@@ -12,7 +12,7 @@ use Exception;
 interface HandlerInterface
 {
     /**
-     * @return int|null  A handler may return nothing, or a Handler::HANDLE_* constant
+     * @return int|NULL  A handler may return nothing, or a Handler::HANDLE_* constant
      */
     public function handle();
 

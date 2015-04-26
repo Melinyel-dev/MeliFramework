@@ -20,8 +20,8 @@ class Run
     const SHUTDOWN_HANDLER  = 'handleShutdown';
 
     protected $isRegistered;
-    protected $allowQuit  = true;
-    protected $sendOutput = true;
+    protected $allowQuit  = TRUE;
+    protected $sendOutput = TRUE;
     protected $sendHttpCode = 500;
 
     /**
@@ -57,8 +57,8 @@ class Run
 
     /**
      * Removes the last handler in the stack and returns it.
-     * Returns null if there's nothing else to pop.
-     * @return null|HandlerInterface
+     * Returns NULL if there's nothing else to pop.
+     * @return NULL|HandlerInterface
      */
     public function popHandler()
     {
@@ -113,7 +113,7 @@ class Run
             set_exception_handler(array($this, self::EXCEPTION_HANDLER));
             register_shutdown_function(array($this, self::SHUTDOWN_HANDLER));
 
-            $this->isRegistered = true;
+            $this->isRegistered = TRUE;
         }
 
         return $this;
@@ -129,7 +129,7 @@ class Run
             restore_exception_handler();
             restore_error_handler();
 
-            $this->isRegistered = false;
+            $this->isRegistered = FALSE;
         }
 
         return $this;
@@ -140,7 +140,7 @@ class Run
      * @param bool|int $exit
      * @return bool
      */
-    public function allowQuit($exit = null)
+    public function allowQuit($exit = NULL)
     {
         if(func_num_args() == 0) {
             return $this->allowQuit;
@@ -179,17 +179,17 @@ class Run
      * @param bool|int $code
      * @return bool
      */
-    public function sendHttpCode($code = null)
+    public function sendHttpCode($code = NULL)
     {
         if(func_num_args() == 0) {
             return $this->sendHttpCode;
         }
 
         if(!$code) {
-            return $this->sendHttpCode = false;
+            return $this->sendHttpCode = FALSE;
         }
 
-        if($code === true) {
+        if($code === TRUE) {
             $code = 500;
         }
 
@@ -204,11 +204,11 @@ class Run
 
     /**
      * Should Whoops push output directly to the client?
-     * If this is false, output will be returned by handleException
+     * If this is FALSE, output will be returned by handleException
      * @param bool|int $send
      * @return bool
      */
-    public function writeToOutput($send = null)
+    public function writeToOutput($send = NULL)
     {
         if(func_num_args() == 0) {
             return $this->sendOutput;
@@ -237,7 +237,7 @@ class Run
         ob_start();
 
         // Just in case there are no handlers:
-        $handlerResponse = null;
+        $handlerResponse = NULL;
 
         for($i = count($this->handlerStack) - 1; $i >= 0; $i--) {
             $handler = $this->handlerStack[$i];
@@ -252,7 +252,7 @@ class Run
                 // The Handler has handled the exception in some way, and
                 // wishes to quit execution (Handler::QUIT), or skip any
                 // other handlers (Handler::LAST_HANDLER). If $this->allowQuit
-                // is false, Handler::QUIT behaves like Handler::LAST_HANDLER
+                // is FALSE, Handler::QUIT behaves like Handler::LAST_HANDLER
                 break;
             }
         }
@@ -271,7 +271,7 @@ class Run
             }
 
             if ($this->sendHttpCode() && isset($_SERVER['REQUEST_URI']) && !headers_sent()) {
-                header(' ', true, $this->sendHttpCode());
+                header(' ', TRUE, $this->sendHttpCode());
             }
 
             echo $output;
@@ -300,16 +300,16 @@ class Run
      *
      * @return bool
      */
-    public function handleError($level, $message, $file = null, $line = null)
+    public function handleError($level, $message, $file = NULL, $line = NULL)
     {
-        //Debug_GestionErreur($level, $message, $file, $line, null);
+        //Debug_GestionErreur($level, $message, $file, $line, NULL);
         if ($level & error_reporting()) {
             foreach ($this->silencedPatterns as $entry) {
                 $pathMatches = (bool) preg_match($entry['pattern'], $file);
                 $levelMatches = $level & $entry['levels'];
                 if ($pathMatches && $levelMatches)  {
                     // Ignore the error, abort handling
-                    return true;
+                    return TRUE;
                 }
             }
             $this->handleException(
