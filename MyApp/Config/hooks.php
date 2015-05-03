@@ -1,14 +1,14 @@
 <?php
 
-/*$hook['post_system'][] = array(
-                                'class'    => 'ClassName',
-                                'function' => 'function_name',
-                                'filename' => 'file_name.php'
-                                );*/
-/*$hook['post_controller_constructor'][] = array(
-                                'function' => 'Autolog',
-                                'filename' => 'autolog.php'
-                                );*/
+/*$hook['post_system'][] = [
+                            'class'    => 'ClassName',
+                            'function' => 'function_name',
+                            'filename' => 'file_name.php'
+                            ];*/
+/*$hook['post_controller_constructor'][] = [
+                            'function' => 'Autolog',
+                            'filename' => 'autolog.php'
+                            ];*/
 
 /*
 pre_system

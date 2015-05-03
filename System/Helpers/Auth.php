@@ -24,14 +24,13 @@ class Auth {
      * @return boolean
      */
     public static function attempt($login, $password) {
-        $loginField = strtoupper($GLOBALS['conf']['auth']['login']);
-        $compte = $GLOBALS['conf']['auth']['class']::query()->where($loginField, $login)->first();
+        $compte = $GLOBALS['conf']['auth']['class']::where($GLOBALS['conf']['auth']['login'], $login)->first();
 
         if ($compte && Hash::check($password, $compte->$GLOBALS['conf']['auth']['password'])) {
             if (Hash::needsRehash($password, $compte->$GLOBALS['conf']['auth']['password'])) {
                 $compte->$GLOBALS['conf']['auth']['password'] = Hash::make($password);
             }
-            $compte->setExpr('lastConnect', 'NOW()');
+            $compte->lastConnect = ['NOW()'];
             $compte->save();
             Session::put('current_user', $compte->id);
             return TRUE;
@@ -49,8 +48,7 @@ class Auth {
      */
     public static function refresh() {
         if (self::check()) {
-            $loginField = strtoupper($GLOBALS['conf']['auth']['login']);
-            $compte = $GLOBALS['conf']['auth']['class']::query()->where($loginField, self::user()->$GLOBALS['conf']['auth']['login'])->first();
+            $compte = $GLOBALS['conf']['auth']['class']::where($GLOBALS['conf']['auth']['login'], self::user()->$GLOBALS['conf']['auth']['login'])->first();
             Session::put('current_user', $compte->id);
             return TRUE;
         }
@@ -80,7 +78,7 @@ class Auth {
     public static function user() {
         if (self::check()) {
             if (!isset($GLOBALS['current_user'])) {
-                $GLOBALS['current_user'] = $GLOBALS['conf']['auth']['class']::query()->find(Session::get('current_user'));
+                $GLOBALS['current_user'] = $GLOBALS['conf']['auth']['class']::find(Session::get('current_user'));
             }
             return $GLOBALS['current_user'];
         } else {
@@ -109,8 +107,7 @@ class Auth {
      * @return boolean
      */
     public static function validate($login, $password) {
-        $loginField = strtoupper($GLOBALS['conf']['auth']['login']);
-        $compte = $GLOBALS['conf']['auth']['class']::query()->where($loginField, $login)->first();
+        $compte = $GLOBALS['conf']['auth']['class']::where($GLOBALS['conf']['auth']['login'], $login)->first();
 
         if (Hash::check($password, $compte->mdp_hash)) {
             return TRUE;

@@ -92,7 +92,7 @@ class Router {
      * @param array
      */
 
-    public static function resources(){
+    public static function resources() {
         $args           = func_get_args();
         $namespaces     = explode(DS, trim(Router::$currentDirectory, DS));
         $namespacesFile = $namespaces;
@@ -116,7 +116,7 @@ class Router {
         $file = CONTROLLERS . $namespaceFile . DS . $name . '.php';
         $key  = $resourceName;
 
-        if (isset($resourceOptions) && array_key_exists('as',$resourceOptions)) {
+        if (isset($resourceOptions) && array_key_exists('as', $resourceOptions)) {
             $key = $resourceOptions['as'];
         }
 
@@ -137,19 +137,19 @@ class Router {
         $ajaxMethodsOptions = [];
 
         if (isset($resourceOptions)) {
-            if (array_key_exists('only',$resourceOptions)) {
+            if (array_key_exists('only', $resourceOptions)) {
                 $getMethodsBase    = (array_intersect_key($getMethodsBase, array_flip($resourceOptions['only'])));
                 $postMethodsBase   = (array_intersect_key($postMethodsBase, array_flip($resourceOptions['only'])));
                 $putMethodsBase    = (array_intersect_key($putMethodsBase, array_flip($resourceOptions['only'])));
                 $deleteMethodsBase = (array_intersect_key($deleteMethodsBase, array_flip($resourceOptions['only'])));
             }
-            if (array_key_exists('except',$resourceOptions)) {
+            if (array_key_exists('except', $resourceOptions)) {
                 $getMethodsBase    = (array_diff_key($getMethodsBase, array_flip($resourceOptions['except'])));
                 $postMethodsBase   = (array_diff_key($postMethodsBase, array_flip($resourceOptions['except'])));
                 $putMethodsBase    = (array_diff_key($putMethodsBase, array_flip($resourceOptions['except'])));
                 $deleteMethodsBase = (array_diff_key($deleteMethodsBase, array_flip($resourceOptions['except'])));
             }
-            if (array_key_exists('as',$resourceOptions)) {
+            if (array_key_exists('as', $resourceOptions)) {
                 $key = $resourceOptions['as'];
             }
 
@@ -160,8 +160,8 @@ class Router {
                 return $string;
             };
 
-            if (array_key_exists('member',$resourceOptions)) {
-                if (array_key_exists('get',$resourceOptions['member'])) {
+            if (array_key_exists('member', $resourceOptions)) {
+                if (array_key_exists('get', $resourceOptions['member'])) {
                     foreach ($resourceOptions['member']['get'] as $k => $v) {
                         if (is_int($k)) {
                             $getMethods[$v] = '/\A' . $namespaceRegex . '[\/]{1}' . $key . '\/([0-9]*)[\-]?([a-zA-Z0-9\-_\+%]*)\/' . $v . '[\/]?$/';
@@ -170,7 +170,7 @@ class Router {
                         }
                     }
                 }
-                if (array_key_exists('post',$resourceOptions['member'])) {
+                if (array_key_exists('post', $resourceOptions['member'])) {
                     foreach ($resourceOptions['member']['post'] as $k => $v) {
                         if(is_int($k)) {
                             $postMethods[$v] = '/\A' . $namespaceRegex . '[\/]{1}' . $key . '\/([0-9]*)[\-]?([a-zA-Z0-9\-_\+%]*)\/' . $v . '[\/]?$/';
@@ -179,7 +179,7 @@ class Router {
                         }
                     }
                 }
-                if (array_key_exists('put',$resourceOptions['member'])) {
+                if (array_key_exists('put', $resourceOptions['member'])) {
                     foreach ($resourceOptions['member']['put'] as $k => $v) {
                         if(is_int($k)) {
                             $putMethods[$v] = '/\A' . $namespaceRegex . '[\/]{1}' . $key . '\/([0-9]*)[\-]?([a-zA-Z0-9\-_\+%]*)\/' . $v . '[\/]?$/';
@@ -188,7 +188,7 @@ class Router {
                         }
                     }
                 }
-                if (array_key_exists('delete',$resourceOptions['member'])) {
+                if (array_key_exists('delete', $resourceOptions['member'])) {
                     foreach ($resourceOptions['member']['delete'] as $k => $v) {
                         if (is_int($k)) {
                             $deleteMethods[$v] = '/\A' . $namespaceRegex . '[\/]{1}' . $key . '\/([0-9]*)[\-]?([a-zA-Z0-9\-_\+%]*)\/' . $v . '[\/]?$/';
@@ -199,8 +199,8 @@ class Router {
                 }
             }
 
-            if (array_key_exists('collection',$resourceOptions)) {
-                if (array_key_exists('get',$resourceOptions['collection'])) {
+            if (array_key_exists('collection', $resourceOptions)) {
+                if (array_key_exists('get', $resourceOptions['collection'])) {
                     foreach ($resourceOptions['collection']['get'] as $k => $v) {
                         if (is_int($k)) {
                             $getMethods[$v] = '/\A' . $namespaceRegex . '[\/]{1}' . $key . '\/' . $v . '[\/]?$/';
@@ -209,7 +209,7 @@ class Router {
                         }
                     }
                 }
-                if (array_key_exists('post',$resourceOptions['collection'])) {
+                if (array_key_exists('post', $resourceOptions['collection'])) {
                     foreach ($resourceOptions['collection']['post'] as $k => $v) {
                         if (is_int($k)) {
                             $postMethods[$v] = '/\A' . $namespaceRegex . '[\/]{1}' . $key . '\/' . $v . '[\/]?$/';
@@ -227,7 +227,7 @@ class Router {
                         }
                     }
                 }
-                if (array_key_exists('delete',$resourceOptions['collection'])) {
+                if (array_key_exists('delete', $resourceOptions['collection'])) {
                     foreach ($resourceOptions['collection']['delete'] as $k => $v) {
                         if (is_int($k)) {
                             $deleteMethods[$v] = '/\A' . $namespaceRegex . '[\/]{1}' . $key . '\/' . $v . '[\/]?$/';
@@ -237,13 +237,13 @@ class Router {
                     }
                 }
             }
-            if (array_key_exists('ajax',$resourceOptions)) {
+            if (array_key_exists('ajax', $resourceOptions)) {
                 foreach ($resourceOptions['ajax'] as $k => $v) {
                     if (is_int($k)) {
-                        $ajaxMethods[$v] = '/\A'.$namespaceRegex.'[\/]{1}'.$key.'\/'.$v.'[\/]?$/';
+                        $ajaxMethods[$v] = '/\A' . $namespaceRegex . '[\/]{1}' . $key . '\/' . $v . '[\/]?$/';
                         $ajaxMethodsOptions[$v] = [];
                     } else {
-                        $ajaxMethods[$k] = '/\A'.$namespaceRegex.'[\/]{1}'.$key.'\/'.$k.'[\/]?$/';
+                        $ajaxMethods[$k] = '/\A' . $namespaceRegex . '[\/]{1}' . $key . '\/' . $k . '[\/]?$/';
                         $ajaxMethodsOptions[$k] = $v;
                     }
                 }
@@ -344,6 +344,7 @@ class Router {
                 $url .= '/' . $controllerName;
             }
         }
+
         Request::setNamespaces([]);
         return Router::parseUrl(explode('/',$url), Router::$availableRoutes);
     }

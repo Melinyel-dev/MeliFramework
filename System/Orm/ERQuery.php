@@ -2563,7 +2563,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         }
         elseif (preg_match('/findBy([\w]*)/', $name, $outputArray)) {
             $string = Text::camelToUnderscore($outputArray[1]);
-            return $this->where(strtoupper($string), $arguments[0])->take();
+            return $this->where($string, $arguments[0])->take();
         }
         elseif (preg_match('/add([\w]*)/', $name, $outputArray) || preg_match('/remove([\w]*)/', $name, $outputArray)) {
             return $this->addRemoveRelation($name, $arguments, $outputArray);

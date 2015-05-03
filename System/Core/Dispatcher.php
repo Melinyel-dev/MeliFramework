@@ -11,7 +11,7 @@ use System\Helpers\Profiler;
  *
  * @author anaeria
  **/
-class Dispatcher{
+class Dispatcher {
 
     /**
     * Fonction principale du dispatcher
@@ -43,7 +43,7 @@ class Dispatcher{
             }
 
             if (extension_loaded ('newrelic')) {
-                newrelic_name_transaction($GLOBALS['conf']['app_name'] . ' ' . implode('/', Request::getNamespaces()) . '/' . Request::getAs() . '::' . Request::getAction() . ($GLOBALS['conf']['environment'] == 'prod' ? '' : $GLOBALS['conf']['environment']));
+                newrelic_name_transaction($GLOBALS['conf']['app_name'] . ' ' . implode('/', Request::getNamespaces()) . '/' . Request::getAs() . '::' . Request::getAction() . ($GLOBALS['conf']['environment'] == 'prod' ? '' : ' - '.$GLOBALS['conf']['environment']));
             }
 
             Profiler::sys_mark('Ability check');

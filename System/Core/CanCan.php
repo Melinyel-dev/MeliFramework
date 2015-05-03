@@ -87,9 +87,9 @@ class CanCan {
         $this->updateableMethods  = array_merge($this->updateableMethods, $ctrl->updateableMethods);
         $this->destroyableMethods = array_merge($this->destroyableMethods, $ctrl->destroyableMethods);
 
-        $method         = $ctrl->request->action;
-        $controllerName = ucfirst($ctrl->request->controller);
-        $namespace      = ArrayHelper::ucfirst($ctrl->request->namespaces);
+        $method         = Request::getAction();
+        $controllerName = ucfirst(Request::getController());
+        $namespace      = ArrayHelper::ucfirst(Request::getNamespaces());
         $namespace      = implode('::', $namespace);
 
         if ($namespace) {

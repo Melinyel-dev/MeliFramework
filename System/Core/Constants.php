@@ -5,7 +5,7 @@
  */
 
 define('FRAMEWORK', 'MeliFramework');
-define('FRAMEWORK_VERSION', '1.0');
+define('FRAMEWORK_VERSION', '1.0a');
 
 
 

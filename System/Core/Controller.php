@@ -22,7 +22,7 @@ use System\Orm\ERDB;
  */
 
 
-class Controller{
+class Controller {
 
     private static $instance;                       // Instance du singleton
 
@@ -32,7 +32,7 @@ class Controller{
     private $view;                                  // Nom de la vue courante
     private $format;                                // Format de la vue courante
 
-    protected $outputMode           = 'html';       // Mode d'émission du résultat de la vue (html, text, json)
+    protected $outputMode           = 'html';       // Mode d'émission du résultat de la vue (html, text, json, stream, xml)
     protected $externalLibsHandeler = FALSE;        // Flag d'activation du gestionaire des ressources externes
     protected $UADispatcherEnable   = FALSE;        // Flag d'activation du dispatcher par User-Agent
     protected $userAgent;
@@ -244,6 +244,10 @@ class Controller{
             header('Content-Type: application/json; charset=UTF-8');
         } elseif ($this->outputMode == 'text') {
             header('Content-Type: text/plain; charset=UTF-8');
+        } elseif ($this->outputMode == 'stream') {
+            header('Content-type: application/octet-stream');
+        } elseif ($this->outputMode == 'xml') {
+            header('Content-Type: application/xml; charset=utf-8');
         }
 
         echo $this->renderedView;
@@ -402,13 +406,21 @@ class Controller{
         // JS
         $js = '';
         foreach ($this->Libs['JS_Header_Scripts'] as $lib) {
-            $js .= '<script src="/js/' . $lib . '.js"></script>';
+            if(mb_strpos($lib, 'http') !== 0) {
+                $js .= '<script src="/js/' . $lib . '.js"></script>';
+            } else {
+                $js .= '<script src="' . $lib . '"></script>';
+            }
         }
         $libs['JS_Header_Scripts'] = $js;
 
         $js = '';
         foreach ($this->Libs['JS_Bottom_Scripts'] as $lib) {
-            $js .= '<script src="/js/' . $lib . '.js"></script>';
+            if(mb_strpos($lib, 'http') !== 0) {
+                $js .= '<script src="/js/' . $lib . '.js"></script>';
+            } else {
+                $js .= '<script src="' . $lib . '"></script>';
+            }
         }
         $libs['JS_Bottom_Scripts'] = $js;
 
@@ -421,6 +433,16 @@ class Controller{
         $libs['JS_Async_Scripts'] = $js;
 
         // JS Vars
+
+        $this->Libs['JS_Vars']['AJAX_ScriptSelf']       = Request::getUrl();
+
+        $this->Libs['JS_Vars']['AJAX_ErrorCode']        = '##ERROR##';
+        $this->Libs['JS_Vars']['AJAX_SuccessCode']      = '##SUCCESS##';
+        $this->Libs['JS_Vars']['AJAX_EndSessionCode']   = '##CLOSE##';
+
+        $this->Libs['JS_Vars']['AJAX_Maintenance']      = '##DOWN##';
+        $this->Libs['JS_Vars']['AJAX_ConnexionRequest'] = '##AUTH##';
+
         if (!empty($this->Libs['JS_Vars'])) {
             $vars = '<script type="text/javascript">';
             foreach ($this->Libs['JS_Vars'] as $entry => $value) {

@@ -11,6 +11,6 @@ $template['default_layout'] = 'default';
 $template['default']['main_region'] = 'content';
 
 // Déclaration des régions du template
-$template['default']['regions'] = array();
+$template['default']['regions'] = [];
 
 /* End of file */

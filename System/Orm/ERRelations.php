@@ -2,7 +2,7 @@
 
 namespace System\Orm;
 
-use Orb\Helpers\Text;
+use System\Helpers\Text;
 
 
 /**
@@ -483,6 +483,7 @@ class ERRelations {
 
     protected function belongsTo($key, $model, $alias) {
         $string = ucfirst($key);
+
         $belongsTo = $model->getNamespace().$string;
 
         if (array_key_exists($string, $model::belongsTo())) {
@@ -610,7 +611,7 @@ class ERRelations {
             if(is_array($value) && isset($value['foreign_key'])) {
                 $keys[] = $value['foreign_key'];
             } elseif (is_string($value)) {
-                $keys[] = 'CLEF_'.Text::camelToUnderscore($value);
+                $keys[] = 'id_'.Text::camelToUnderscore($value);
             }
         }
 
