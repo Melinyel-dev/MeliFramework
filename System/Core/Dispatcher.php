@@ -74,9 +74,8 @@ class Dispatcher {
 
                 $controller->displayView();
             } else {
-                $controller->ajax->setEnv();
-                $controller->ajax->getResult($ajaxReturn);
-                $controller->ajax->output();
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode($ajaxReturn);
             }
 
             $endRenderingView = microtime(TRUE) * 1000;

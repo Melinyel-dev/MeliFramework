@@ -24,6 +24,13 @@ use System\Orm\ERDB;
 
 class Controller {
 
+    const AJAX_ErrorCode        = '##ERROR##';
+    const AJAX_SuccessCode      = '##SUCCESS##';
+    const AJAX_EndSessionCode   = '##CLOSE##';
+
+    const AJAX_Maintenance      = '##DOWN##';
+    const AJAX_ConnexionRequest = '##AUTH##';
+
     private static $instance;                       // Instance du singleton
 
     private $rendered               = FALSE;        // Flag de l'état du rendu
@@ -436,12 +443,12 @@ class Controller {
 
         $this->Libs['JS_Vars']['AJAX_ScriptSelf']       = Request::getUrl();
 
-        $this->Libs['JS_Vars']['AJAX_ErrorCode']        = '##ERROR##';
-        $this->Libs['JS_Vars']['AJAX_SuccessCode']      = '##SUCCESS##';
-        $this->Libs['JS_Vars']['AJAX_EndSessionCode']   = '##CLOSE##';
+        $this->Libs['JS_Vars']['AJAX_ErrorCode']        = self::AJAX_ErrorCode;
+        $this->Libs['JS_Vars']['AJAX_SuccessCode']      = self::AJAX_SuccessCode;
+        $this->Libs['JS_Vars']['AJAX_EndSessionCode']   = self::AJAX_EndSessionCode;
 
-        $this->Libs['JS_Vars']['AJAX_Maintenance']      = '##DOWN##';
-        $this->Libs['JS_Vars']['AJAX_ConnexionRequest'] = '##AUTH##';
+        $this->Libs['JS_Vars']['AJAX_Maintenance']      = self::AJAX_Maintenance;
+        $this->Libs['JS_Vars']['AJAX_ConnexionRequest'] = self::AJAX_ConnexionRequest;
 
         if (!empty($this->Libs['JS_Vars'])) {
             $vars = '<script type="text/javascript">';

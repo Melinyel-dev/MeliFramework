@@ -222,9 +222,8 @@ class Request {
         }
 
         // Test if method is ajax
-        if ($method == 'POST' && isset($_POST['action']) && $_POST['action'] == 'AJAX') {
+        if ($method == 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest' && self::getParam('_method') == 'ajax') {
             $method = 'AJAX';
-            unset($_POST['action']);
         }
 
         self::$method = $method;
@@ -384,7 +383,7 @@ class Request {
     // -------------------------------------------------------------------------
 
     /**
-     * Delete à parameter
+     * Delete a parameter
      *
      * @param string $name
      */
@@ -392,6 +391,24 @@ class Request {
         if (self::hasParam($name)) {
             unset(self::$params[$name]);
         }
+    }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Get the ajax query parameters as a JSON array
+     *
+     * @param boolean $assoc
+     * @return NULL | array
+     */
+    public static function getAjaxParams($assoc = TRUE) {
+        $params = self::getParam('ajaxParams', NULL, FALSE);
+        if($params) {
+            return json_decode($params, $assoc);
+        }
+
+        return NULL;
     }
 
 
