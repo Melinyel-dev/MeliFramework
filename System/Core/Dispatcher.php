@@ -35,6 +35,7 @@ class Dispatcher {
             Hook::load('pre_controller');
 
             // Chargement du contrôlleur
+            $startController = microtime(TRUE) * 1000;
             $controller = $this->loadController();
 
             // Vérification que la méthode appelée est défini dans les routes et existe
@@ -46,13 +47,14 @@ class Dispatcher {
                 newrelic_name_transaction($GLOBALS['conf']['app_name'] . ' ' . implode('/', Request::getNamespaces()) . '/' . Request::getAs() . '::' . Request::getAction() . ($GLOBALS['conf']['environment'] == 'prod' ? '' : ' - '.$GLOBALS['conf']['environment']));
             }
 
+            Hook::load('pre_ability');
+
             Profiler::sys_mark('Ability check');
             $controller->checkAbility();
             Profiler::sys_mark('Ability check');
 
             Hook::load('post_controller_constructor');
 
-            $startController = microtime(TRUE) * 1000;
             ob_start();
 
             // Appel de la méthode du contrôlleur

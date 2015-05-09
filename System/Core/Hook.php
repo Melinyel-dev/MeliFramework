@@ -51,18 +51,18 @@ class Hook {
             foreach (self::$hooks[$trigger] as $hook) {
                 extract($hook);
 
-                if (is_file($file = HOOKS . DS . $filename)) {
+                if (isset($class)) {
+                    if (class_exists($class)) {
+                        $hook_class = new $class();
+
+                        if (method_exists($hook_class, $function)) {
+                            call_user_func([$hook_class, $function]);
+                        }
+                    }
+                } elseif (is_file($file = HOOKS . DS . $filename)) {
                     require $file;
 
-                    if (isset($class)) {
-                        if (class_exists($class)) {
-                            $hook_class = new $class();
-
-                            if (method_exists($hook_class, $function)) {
-                                call_user_func([$hook_class, $function]);
-                            }
-                        }
-                    } elseif (function_exists($function)) {
+                     if (function_exists($function)) {
                         $function();
                     }
                 }

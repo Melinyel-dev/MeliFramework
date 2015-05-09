@@ -713,6 +713,22 @@ class EasyRecord {
     // -------------------------------------------------------------------------
 
     /**
+     * Annule les changement effectué au modèle
+     *
+     * @return boolean
+     */
+
+    public function revertAll(){
+        foreach ($this->dirty as $key => $value) {
+            unset($this->dirty[$key]);
+        }
+        return TRUE;
+    }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
      * Test la validité du modèle
      *
      * @return boolean

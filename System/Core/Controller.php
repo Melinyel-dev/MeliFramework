@@ -190,8 +190,11 @@ class Controller {
 
         if ($this->UADispatcherEnable) {
             $originalView = $view;
+            $originalLayout = $this->layout;
             Profiler::sys_mark('UserAgent Dispatch');
-            $view .= $this->userAgent->suffix();
+            $suffix = $this->userAgent->suffix();
+            $view .= $suffix;
+            $this->layout .= $suffix;
             Profiler::sys_mark('UserAgent Dispatch');
         }
 
@@ -229,7 +232,7 @@ class Controller {
             } else {
                 $this->renderNone($file);
             }
-        } elseif($this->UADispatcherEnable ) {
+        } elseif($this->UADispatcherEnable) {
             $this->UADispatcherEnable = FALSE;
             $this->renderDisplay();
         } else {
