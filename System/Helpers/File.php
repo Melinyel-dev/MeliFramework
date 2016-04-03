@@ -13,7 +13,7 @@ class File {
      * File name
      * @var string
      */
-    protected $path = NULL;
+    protected $path = null;
 
     // -------------------------------------------------------------------------
 
@@ -35,7 +35,7 @@ class File {
         if (isset($path) && is_file($path)) {
             $this->path = $path;
         } else {
-            $this->path = NULL;
+            $this->path = null;
         }
     }
 
@@ -46,7 +46,7 @@ class File {
      * @return boolean
      */
     public function exists() {
-        return $this->path != NULL;
+        return $this->path != null;
     }
 
     // -------------------------------------------------------------------------
@@ -61,7 +61,7 @@ class File {
             return $this->create($to);
         }
 
-        return FALSE;
+        return false;
     }
 
     // -------------------------------------------------------------------------
@@ -74,10 +74,10 @@ class File {
     public function move($to) {
         if ($this->exists() && rename($this->path, $to)) {
             $this->init($to);
-            return TRUE;
+            return true;
         }
 
-        return FALSE;
+        return false;
     }
 
     // -------------------------------------------------------------------------
@@ -88,11 +88,11 @@ class File {
      */
     public function delete() {
         if ($this->exists() && unlink($this->path)) {
-            $this->init(NULL);
-            return TRUE;
+            $this->init(null);
+            return true;
         }
 
-        return FALSE;
+        return false;
     }
 
     // -------------------------------------------------------------------------

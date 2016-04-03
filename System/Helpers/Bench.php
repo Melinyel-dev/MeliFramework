@@ -23,7 +23,7 @@ class Bench {
      */
 
     public static function mark($label) {
-        self::$marks[] = [$label, microtime(TRUE)];
+        self::$marks[] = [$label, microtime(true)];
     }
 
 
@@ -39,14 +39,14 @@ class Bench {
     public static function times($unit = 1) {
 
         $times = [];
-        $prev  = NULL;
-        $first = NULL;
+        $prev  = null;
+        $first = null;
         foreach (self::$marks as $mark) {
 
             $label = $mark[0];
             $time  = $mark[1] * $unit;
 
-            $firstTime = $first === NULL;
+            $firstTime = $first === null;
 
             $times[$label] = [
                 'time' => $firstTime ? 0 : $time - $first,

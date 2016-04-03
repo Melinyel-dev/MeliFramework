@@ -29,6 +29,18 @@ What's comming next ?
 Release notes
 ==============
 
+v1.0c
+-----
+    - Revised Orm
+    - Add multiple pimary keys support
+    - Add index of results choice in Orm
+    - Add support of potential relations (child or parent pre-loaded)
+    - Add helper to manage languages
+    - Add AntiSpam helper
+    - Add geolocation manipulator
+    - Add alternative query builder (ERQB)
+
+
 v1.0
 -----
     - Revised architecture : can now handle multi-apps
@@ -57,7 +69,6 @@ v0.1
 Powered by MeliFramework
 ------------
     - http://www.h-wars.net
-    - http://www.highlands-framework.com
     - http://www.danstoncode.net
     - http://www.gamestories.net
     - http://www.evade-multimedia.net

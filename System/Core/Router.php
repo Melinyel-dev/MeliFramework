@@ -14,8 +14,8 @@ namespace System\Core;
 class Router {
 
     private static $availableRoutes  = [];
-    private static $currentDirectory = NULL;
-    private static $root             = NULL;
+    private static $currentDirectory = null;
+    private static $root             = null;
 
 
 
@@ -63,7 +63,7 @@ class Router {
     public static function root() {
         $args       = func_get_args();
         $namespaces = explode(DS, trim(Router::$currentDirectory, DS));
-        $namespace  = NULL;
+        $namespace  = null;
         $rootName   = $args[0];
 
         if (!empty($namespaces[0])) {
@@ -96,8 +96,8 @@ class Router {
         $args           = func_get_args();
         $namespaces     = explode(DS, trim(Router::$currentDirectory, DS));
         $namespacesFile = $namespaces;
-        $namespace      = NULL;
-        $namespaceFile  = NULL;
+        $namespace      = null;
+        $namespaceFile  = null;
 
         if (!empty($namespaces[0])) {
             array_walk($namespacesFile, function(&$array, $key) {
@@ -388,7 +388,7 @@ class Router {
                 Request::setAction(isset($ary[0]) ? $ary[0] : 'index');
                 Request::setRoutes($allRoutes);
 
-                return TRUE;
+                return true;
             }
             Request::addNamespace($firstElem);
             return Router::parseUrl($ary, $allRoutes[$firstElem]);
@@ -402,7 +402,7 @@ class Router {
 
                 return Router::parseUrl($params, Router::$availableRoutes);
             }
-            return FALSE;
+            return false;
         }
     }
 }

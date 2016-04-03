@@ -43,7 +43,7 @@ class RouteNotFoundStrategy extends BaseRouteNotFoundStrategy {
             }
         } else {
             $model = $vars;
-            if ($model->getVariable('message') === NULL) {
+            if ($model->getVariable('message') === null) {
                 $model->setVariable('message', 'Page not found.');
             }
         }

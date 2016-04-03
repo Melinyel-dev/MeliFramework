@@ -39,12 +39,35 @@ class ERResult implements \Countable, \IteratorAggregate {
     // -------------------------------------------------------------------------
 
     /**
-     * Fetch a result row as an associative array
-     * Returns NULL if there are no more rows
+     * Get fields name
      *
-     * @return array|NULL
+     * @return array
+     */
+    public function fields() {
+        return $this->result->fetch_fields();
+    }
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Fetch a result row
+     * Returns null if there are no more rows
+     *
+     * @return array|null
      */
     public function next() {
+        return $this->nextAssoc();
+    }
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Fetch a result row as an associative array
+     * Returns null if there are no more rows
+     *
+     * @return array|null
+     */
+    public function nextAssoc() {
         $this->row = $this->result->fetch_assoc();
         return $this->row();
     }
@@ -52,8 +75,21 @@ class ERResult implements \Countable, \IteratorAggregate {
     // -------------------------------------------------------------------------
 
     /**
+     * Fetch a result row as an object
+     * Returns null if there are no more rows
+     *
+     * @return array|null
+     */
+    public function nextObject() {
+        $this->row = $this->result->fetch_object();
+        return $this->row();
+    }
+
+    // -------------------------------------------------------------------------
+
+    /**
      * Returns current row as associative array
-     * Returns NULL if there are no more rows
+     * Returns null if there are no more rows
      *
      * @return type
      */
@@ -70,7 +106,7 @@ class ERResult implements \Countable, \IteratorAggregate {
      * @param mixed $default
      * @return mixed
      */
-    public function get($key, $default = NULL) {
+    public function get($key, $default = null) {
         return isset($this->row[$key]) ? $this->row[$key] : $default;
     }
 
@@ -82,7 +118,89 @@ class ERResult implements \Countable, \IteratorAggregate {
      * @return array
      */
     public function all() {
-        return $this->result->fetch_all(MYSQLI_ASSOC);
+         return $this->allAssoc();
+    }
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns all rows as array of associative arrays
+     *
+     * @return array
+     */
+    public function allAssoc() {
+         return $this->result->fetch_all(MYSQLI_ASSOC);
+    }
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns all rows as array of objects
+     *
+     * @return array
+     */
+    public function allObject() {
+        $data = [];
+
+        while (($row  = $this->result->fetch_object())) {
+            $data[] = $row;
+        }
+
+        return $data;
+    }
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Return an unique
+     *
+     * @return array
+     * @throws \Orb\EasyRecord\ERException
+     */
+    public function one($exception = true) {
+        return $this->oneAssoc($exception);
+    }
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Return an unique row as an associative array
+     *
+     * @return array
+     * @throws \Orb\EasyRecord\ERException
+     */
+    public function oneAssoc($exception = true) {
+        if ($this->count() !== 1) {
+
+            if ($exception) {
+                throw new ERException("The number of results is different to 1 ({$this->count()})");
+            }
+
+            return false;
+        }
+
+        return $this->next();
+    }
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Return an unique row as an object
+     *
+     * @return array
+     * @throws \Orb\EasyRecord\ERException
+     */
+    public function oneObject($exception = true) {
+        if ($this->count() !== 1) {
+
+            if ($exception) {
+                throw new ERException("The number of results is different to 1 ({$this->count()})");
+            }
+
+            return false;
+        }
+
+        return $this->nextObject();
     }
 
     // -------------------------------------------------------------------------

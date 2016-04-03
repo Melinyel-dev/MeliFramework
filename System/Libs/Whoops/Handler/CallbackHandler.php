@@ -36,7 +36,7 @@ class CallbackHandler extends Handler
     }
 
     /**
-     * @return int|NULL
+     * @return int|null
      */
     public function handle()
     {

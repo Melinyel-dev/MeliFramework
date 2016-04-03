@@ -5,13 +5,15 @@ namespace System\Orm;
 use System\Helpers\Text;
 
 
+
 /**
  * ERRelations Class
  *
  * @author anaeria
  */
 
-class ERRelations {
+class ERRelations
+{
 
 
     /**
@@ -21,7 +23,8 @@ class ERRelations {
      * @return mixed
      */
 
-    public function __get($key) {
+    public function __get($key)
+    {
         if (!property_exists($this, $key)) {
             $this->$key = [];
         }
@@ -35,7 +38,8 @@ class ERRelations {
      * Détruit les relations enregistrées
      */
 
-    protected function reset() {
+    protected function reset()
+    {
         unset($this->hasAndBelongsToManyToAdd);
         unset($this->hasAndBelongsToManyToRemove);
         unset($this->hasManyToAdd);
@@ -51,13 +55,16 @@ class ERRelations {
      * @param string model
      */
 
-    public function createRelations($model) {
+    public function createRelations($model)
+    {
         if ($this->hasAndBelongsToManyToAdd) {
             $this->saveHasAndBelongsToManyToAdd($model);
         }
+
         if ($this->hasManyToAdd) {
             $this->saveHasManyToAdd($model);
         }
+
         $this->reset();
     }
 
@@ -70,16 +77,20 @@ class ERRelations {
      * @param string model
      */
 
-    public function updateRelations($model) {
+    public function updateRelations($model)
+    {
         if ($this->hasAndBelongsToManyToRemove) {
             $this->saveHasAndBelongsToManyToRemove($model);
         }
+
         if ($this->hasAndBelongsToManyToAdd) {
             $this->saveHasAndBelongsToManyToAdd($model);
         }
+
         if ($this->hasManyToRemove) {
             $this->saveHasManyToRemove($model);
         }
+
         if ($this->hasManyToAdd) {
             $this->saveHasManyToAdd($model);
         }
@@ -95,10 +106,29 @@ class ERRelations {
      * @param string model
      */
 
-    protected function saveHasAndBelongsToManyToRemove($model) {
+    protected function saveHasAndBelongsToManyToRemove($model)
+    {
         foreach ($this->hasAndBelongsToManyToRemove as $concatTable => $todo) {
             foreach ($todo as $idHasAndBelongsToMany => $requestHasAndBelongsToMany) {
-                ERDB::getInstance()->query('DELETE FROM '.$requestHasAndBelongsToMany['concatTable'].' WHERE '.$requestHasAndBelongsToMany['thisId'].' = "'.$model->getIdentifierValue().'" AND '.$requestHasAndBelongsToMany['objectId'].' = "'.$requestHasAndBelongsToMany['objectValue'].'"');
+
+                $thisIds  = array_values($requestHasAndBelongsToMany['thisId']);
+                $objectId = array_values($requestHasAndBelongsToMany['objectId']);
+
+                $modelVals = [];
+                $n = 0;
+                foreach ($model->getIdentifierValue($model::READ_TO_ARRAY) as $key => $value) {
+                    $modelVals[] = $thisIds[$n] . " = '" . $value . "'";
+                    $n++;
+                }
+
+                $objectVals = [];
+                $n = 0;
+                foreach ($requestHasAndBelongsToMany['objectValue'] as $key => $value) {
+                    $objectVals[] = $objectId[$n] . " = '" . $value . "'";
+                    $n++;
+                }
+
+                ERDB::getInstance()->query('DELETE FROM '.$requestHasAndBelongsToMany['concatTable'].' WHERE ' . implode(' AND ', $modelVals) . ' AND ' . implode(' AND ', $objectVals) . '');
             }
         }
     }
@@ -112,10 +142,25 @@ class ERRelations {
      * @param string model
      */
 
-    protected function saveHasAndBelongsToManyToAdd($model) {
+    protected function saveHasAndBelongsToManyToAdd($model)
+    {
         foreach ($this->hasAndBelongsToManyToAdd as $concatTable => $todo) {
             foreach ($todo as $idHasAndBelongsToMany => $requestHasAndBelongsToMany) {
-                ERDB::getInstance()->query('INSERT INTO '.$requestHasAndBelongsToMany['concatTable'].' ('.$requestHasAndBelongsToMany['thisId'].', '.$requestHasAndBelongsToMany['objectId'].') VALUES ("'.$model->getIdentifierValue().'", "'.$requestHasAndBelongsToMany['objectValue'].'")');
+
+                $thisIds = array_values($requestHasAndBelongsToMany['thisId']);
+                $objectId = array_values($requestHasAndBelongsToMany['objectId']);
+
+                $modelVals = [];
+                foreach ($model->getIdentifierValue($model::READ_TO_ARRAY) as $key => $value) {
+                    $modelVals[] = "'" . $value . "'";
+                }
+
+                $objectVals = [];
+                foreach ($requestHasAndBelongsToMany['objectValue'] as $key => $value) {
+                    $objectVals[] = "'" . $value . "'";
+                }
+
+                ERDB::getInstance()->query('INSERT INTO '.$requestHasAndBelongsToMany['concatTable']." (" . implode(', ', $thisIds) . ", " . implode(', ', $objectId) . ") VALUES (" . implode(', ', $modelVals) . ", " . implode(', ', $objectVals) . ")");
             }
         }
     }
@@ -129,13 +174,23 @@ class ERRelations {
      * @param string model
      */
 
-    protected function saveHasManyToRemove($model) {
+    protected function saveHasManyToRemove($model)
+    {
         foreach ($this->hasManyToRemove as $through => $todo) {
             foreach ($todo as $idHasMany => $requestHasMany) {
-                $objectThrough = $through::where($requestHasMany['hasManyKey'], $requestHasMany['hasManyValue'])->where($requestHasMany['belongsToKey'], $model->getIdentifierValue())->take();
-                if ($objectThrough) {
-                    $objectThrough->delete();
+                $objectThrough = $through::query();
+
+                foreach ($requestHasMany['hasManyKey'] as $key => $value) {
+                    $objectThrough->where($value, $requestHasMany['hasManyValue'][$key]);
                 }
+
+                foreach ($model->getIdentifierValue($model::READ_TO_ARRAY) as $key => $value) {
+                    $objectThrough->where($requestHasMany['belongsToKey'][$key], $value);
+                }
+
+                $objectThrough = $objectThrough->take();
+                if ($objectThrough)
+                    $objectThrough->delete();
             }
         }
     }
@@ -149,13 +204,14 @@ class ERRelations {
      * @param string model
      */
 
-    protected function saveHasManyToAdd($model) {
+    protected function saveHasManyToAdd($model)
+    {
         foreach ($this->hasManyToAdd as $through => $todo) {
             foreach ($todo as $idHasMany => $requestHasMany) {
                 $objectThrough = new $through;
 
-                $object                = new $requestHasMany['relName'];
-                $cleEtrangere          = $requestHasMany['relName']::getIdentifier();
+                $object = new $requestHasMany['relName'];
+                $cleEtrangere = $requestHasMany['relName']::getIdentifier();
                 $object->$cleEtrangere = $requestHasMany['relValue'];
 
                 $requestHasMany['args'] = array_change_key_case($requestHasMany['args']);
@@ -164,7 +220,6 @@ class ERRelations {
                 $belongsToRel = lcfirst(get_class($model));
                 $objectThrough->$hasManyRel = $object;
                 $objectThrough->$belongsToRel = $model;
-
                 foreach ($requestHasMany['args'] as $key => $value) {
                     $objectThrough->$key = $value;
                 }
@@ -185,7 +240,8 @@ class ERRelations {
      * @return array
      */
 
-    protected function hasMany($key, $model, $alias) {
+    protected function hasMany($key, $model, $alias)
+    {
         $string = ucfirst($key);
         $hasMany = $model->getNamespace().$string;
 
@@ -193,23 +249,19 @@ class ERRelations {
             $hasMany = substr($hasMany,0,strlen($hasMany)-1);
         }
 
-        $whereExpr = NULL;
-        $limit     = NULL;
-        $orderBy   = NULL;
+        $whereExpr = null;
+        $limit     = null;
+        $orderBy   = null;
 
         if (array_key_exists($string, $model::hasMany())) {
             $infosArray = $model::hasMany()[$string];
 
             if (array_key_exists('class_name', $infosArray)) {
-                $hasMany = $infosArray['class_name'];
+                $hasMany = $model->getNamespace().$infosArray['class_name'];
             }
 
             if (array_key_exists('inverse_of', $infosArray)) {
                 $infosArray = $hasMany::belongsTo()[$infosArray['inverse_of']];
-            }
-
-            if (array_key_exists('foreign_key', $infosArray)) {
-                $cleEtrangere = $infosArray['foreign_key'];
             }
 
             if (array_key_exists('conditions', $infosArray)) {
@@ -224,77 +276,75 @@ class ERRelations {
                 $orderBy = $infosArray['order_by'];
             }
 
-            if (array_key_exists('polymorphic', $infosArray)) {
-                $cleEtrangere = $infosArray['polymorphic'].'_id';
-                $cleType = $infosArray['polymorphic'].'_type';
-                if ($whereExpr) {
-                    $whereExpr .= ' AND';
-                }
-                $whereExpr .= ' '.$cleType.' = "'.get_class($model).'"';
-            }
-
             if (array_key_exists('through', $model::hasMany()[$string])) {
-                $through = $model->getNamespace().$model::hasMany()[$string]['through'];
+
+                $through = $model::hasMany()[$string]['through'];
+
                 if ($through[strlen($through)-1] == 's') {
                     $through = substr($through,0,strlen($through)-1);
                 }
 
-                $belongsTo     = $model->getNamespace().get_class($model);
+                $belongsTo     = $model->getNamespace().$string;
+
                 if (array_key_exists($belongsTo, $through::belongsTo())) {
                     $infosArray = $through::belongsTo()[$belongsTo];
 
-                    if (array_key_exists('foreign_key', $infosArray)) {
-                        $cleEtrangere = $infosArray['foreign_key'];
-                    }
-
                     if (array_key_exists('class_name', $infosArray)) {
-                        $belongsTo = $infosArray['class_name'];
-                    }
-
-                    if (!isset($cleEtrangere) && array_key_exists('inverse_of', $infosArray)) {
-                        $cleEtrangere = $belongsTo::hasMany()[$infosArray['inverse_of']]['foreign_key'];
+                        $belongsTo = $model->getNamespace().$infosArray['class_name'];
                     }
                 }
 
-                if (!isset($cleEtrangere)) {
-                    $cleEtrangere = $model::getIdentifier();
-                }
+                $cleEtrangere = $through::getRelationKeys($string);
 
-                if (in_array($hasMany, $through::belongsTo()) || array_key_exists($hasMany, $through::belongsTo())) {
-                    if (array_key_exists($hasMany, $through::belongsTo()) && array_key_exists('class_name', $through::belongsTo()[$hasMany])) {
-                        $hasMany = $through::belongsTo()[$hasMany]['class_name'];
+                if (in_array($string, $through::belongsTo()) || array_key_exists($string, $through::belongsTo())) {
+                    if (array_key_exists($string, $through::belongsTo()) && array_key_exists('class_name', $through::belongsTo()[$string])) {
+                        $hasMany = $model->getNamespace().$through::belongsTo()[$string]['class_name'];
                     }
+
                     $throughs = $through.'s';
-                } elseif (in_array($hasMany.'s', $through::hasMany()) || array_key_exists($hasMany.'s', $through::hasMany())) {
-                    if (array_key_exists($hasMany.'s', $through::hasMany()) && array_key_exists('class_name', $through::hasMany()[$hasMany.'s'])) {
-                        $hasMany = $through::hasMany()[$hasMany.'s']['class_name'];
+                } elseif (in_array($string, $through::hasMany()) || array_key_exists($string, $through::hasMany())) {
+                    if (array_key_exists($string, $through::hasMany()) && array_key_exists('class_name', $through::hasMany()[$string])) {
+                        $hasMany = $model->getNamespace().$through::hasMany()[$string]['class_name'];
                     }
-                    $throughs = $through;
+
+                    $throughs = $string;
                 } else {
                     throw new ERException('EasyRecord::joinsIncludes() parameter 1 is not a known relationship or incorrectly defined', 1);
                 }
 
-                $objects = $hasMany::
+                $objects = $model::
                       alias($alias)
+                    ->select('*')
                     ->joins($throughs)
-                    ->where($through::table().'.'.$cleEtrangere, $model->getIdentifierValue())
                     ->where($whereExpr)
                     ->orderBy($orderBy)
                     ->limit($limit);
 
-                if (array_key_exists('uniq', $model::hasMany()[$string]) && $model::hasMany()[$string]['uniq'] === TRUE) {
+                $values = $model->getIdentifierValue($model::READ_TO_ARRAY);
+                foreach ($cleEtrangere as $key => $value) {
+                    $objects->where($through::table() . '.' . $value, $values[$key]);
+                }
+
+                if (array_key_exists('uniq', $model::hasMany()[$string]) && $model::hasMany()[$string]['uniq'] === true) {
                     $objects->distinct();
                 }
+
                 return $objects;
             }
         }
 
-        if (!isset($cleEtrangere)) {
-            $cleEtrangere = $model::getIdentifier();
+        $cleEtrangere = $model->getRelationKeys($key);
+
+        $hmObject = $hasMany::alias($alias)->where($whereExpr)->orderBy($orderBy)->limit($limit);
+
+        $values = $model->getIdentifierValue($model::READ_TO_ARRAY);
+
+        foreach ($cleEtrangere as $key => $value) {
+            $hmObject->where($value, $values[$key]);
         }
 
-        $hmObject = $hasMany::alias($alias)->where($whereExpr)->where($cleEtrangere, $model->getIdentifierValue())->orderBy($orderBy)->limit($limit);
-        $hmObject->belongsToDetails = ['referer' => $model->getIdentifierValue(), 'cle_etrangere' => $cleEtrangere, 'model' => get_class($model)];
+        $hmObject->belongsToDetails = ['referer' => $model->getIdentifierValue($model::READ_TO_ARRAY), 'cle_etrangere' => $cleEtrangere, 'model' => get_class($model)];
+
         return $hmObject;
     }
 
@@ -310,40 +360,43 @@ class ERRelations {
      * @return array
      */
 
-    protected function hasOne($key, $model, $alias) {
+    protected function hasOne($key, $model, $alias)
+    {
         $string = ucfirst($key);
         $hasOne = $model->getNamespace().$string;
+
         if (!array_key_exists($key, $this->storedHasOne)) {
             if (array_key_exists($string, $model::hasOne())) {
                 $infosArray = $model::hasOne()[$string];
 
-                if (array_key_exists('foreign_key', $infosArray)) {
-                    $cleEtrangere = $infosArray['foreign_key'];
-                }
-
                 if (array_key_exists('class_name', $infosArray)) {
-                    $hasOne = $infosArray['class_name'];
-                }
-
-                if (!isset($cleEtrangere) && array_key_exists('inverse_of', $infosArray)) {
-                    $cleEtrangere = $hasOne::belongsTo()[$infosArray['inverse_of']]['foreign_key'];
+                    $hasOne = $model->getNamespace().$infosArray['class_name'];
                 }
             }
 
-            if (!isset($cleEtrangere)) {
-                $cleEtrangere = $model::getIdentifier();
-            }
+            $cleEtrangere = $model->getRelationKeys($key);
 
             if (!$model->isNew()) {
-                $this->storedHasOne[$key] = $hasOne::where($cleEtrangere, $model->getIdentifierValue())->first();
+                $this->storedHasOne[$key] = $hasOne::query();
+
+                $values = $model->getIdentifierValue($model::READ_TO_ARRAY);
+                foreach ($cleEtrangere as $pk => $value) {
+                    $this->storedHasOne[$key]->where($value, $values[$pk]);
+                }
+
+                $this->storedHasOne[$key] = $this->storedHasOne[$key]->first();
             } else {
-                $this->storedHasOne[$key] = NULL;
+                $this->storedHasOne[$key] = null;
             }
 
             if (!$this->storedHasOne[$key]) {
                 $this->storedHasOne[$key] = new $hasOne;
+
                 if (!$model->isNew()) {
-                    $this->storedHasOne[$key]->$cleEtrangere = $model->getIdentifierValue();
+                    $values = $model->getIdentifierValue($model::READ_TO_ARRAY);
+                    foreach ($cleEtrangere as $pk => $value) {
+                        $this->storedHasOne[$key]->$value = $values[$pk];
+                    }
                 }
             }
         }
@@ -362,7 +415,8 @@ class ERRelations {
      * @return array
      */
 
-    protected function hasAndBelongsToMany($key, $model, $alias) {
+    protected function hasAndBelongsToMany($key, $model, $alias)
+    {
         $string = ucfirst($key);
         $hasAndBelongsToMany = $model->getNamespace().$string;
 
@@ -370,16 +424,16 @@ class ERRelations {
             $hasAndBelongsToMany = substr($hasAndBelongsToMany,0,strlen($hasAndBelongsToMany)-1);
         }
 
-        $whereExpr           = NULL;
-        $limit               = NULL;
-        $orderBy             = NULL;
+        $whereExpr           = null;
+        $limit               = null;
+        $orderBy             = null;
         $database            = $model::database();
 
         if (array_key_exists($string, $model::hasAndBelongsToMany())) {
             $infosArray = $model::hasAndBelongsToMany()[$string];
 
             if (array_key_exists('class_name', $infosArray)) {
-                $hasAndBelongsToMany = $infosArray['class_name'];
+                $hasAndBelongsToMany = $model->getNamespace().$infosArray['class_name'];
             }
 
             if (array_key_exists('inverse_of', $infosArray)) {
@@ -415,26 +469,35 @@ class ERRelations {
             }
         }
 
-        if (!isset($associationCleEtrangere)){
-            $associationCleEtrangere = $hasAndBelongsToMany::getIdentifier();
+        if (!isset($associationCleEtrangere)) {
+            $associationCleEtrangere = $hasAndBelongsToMany::getIdentifier($hasAndBelongsToMany::READ_TO_ARRAY);
         }
 
-        if (!isset($concatCleEtrangere)){
-            $concatCleEtrangere = $model::getIdentifier();
+        if (!isset($concatCleEtrangere)) {
+            $concatCleEtrangere = $model::getIdentifier($model::READ_TO_ARRAY);
+        }
+
+        if(!is_array($associationCleEtrangere)) {
+            $associationCleEtrangere = [$hasAndBelongsToMany::getIdentifier($model::READ_TO_STRING) => $associationCleEtrangere];
+        }
+
+        if(!is_array($concatCleEtrangere)) {
+            $concatCleEtrangere = [$model::getIdentifier($hasAndBelongsToMany::READ_TO_STRING) => $concatCleEtrangere];
         }
 
         $staticTable = $model::table();
-        $habtmTable  = $hasAndBelongsToMany::table();
-        $objetTable  = $hasAndBelongsToMany::database().'.'.$habtmTable;
+        $habtmTable = $hasAndBelongsToMany::table();
+        $objetTable = $hasAndBelongsToMany::database().'.'.$habtmTable;
 
         if (!isset($concatTable)) {
-            if ($habtmTable < $staticTable) {
+            if ($habtmTable < $staticTable){
                 $concatTable = $habtmTable.'_'.$staticTable;
             }
             else {
                 $concatTable = $staticTable.'_'.$habtmTable;
             }
         }
+
         $concatTableDb = $database.'.'.$concatTable;
 
         if (!$alias) {
@@ -443,14 +506,26 @@ class ERRelations {
 
         $habtmObject = $hasAndBelongsToMany::
               alias($alias)
-            ->selectExpr($alias.'.*')
-            ->joinWhere($concatTableDb, [$concatTable.'.'.$associationCleEtrangere => $alias.'.'.$hasAndBelongsToMany::getIdentifier()])
+            ->selectExpr($alias . '.*')
+            ->selectExpr($concatTableDb . '.*')
             ->where($whereExpr)
-            ->where($concatTable.'.'.$concatCleEtrangere, $model->getIdentifierValue())
             ->orderBy($orderBy)
             ->limit($limit);
 
-        $hasAndBelongsToManyObjectsToAdd    = [];
+        $constraints = [];
+        foreach ($associationCleEtrangere as $key => $value) {
+            $constraints[] = ['foreign_key' => $concatTable . '.' . $value, 'identifier' => $alias . '.' . $key];
+        }
+
+        $habtmObject->joinWhere($concatTableDb, $constraints);
+
+        $values = $model->getIdentifierValue($model::READ_TO_ARRAY);
+
+        foreach ($concatCleEtrangere as $key => $value) {
+            $habtmObject->where($concatTable . '.' . $value, $values[$key]);
+        }
+
+        $hasAndBelongsToManyObjectsToAdd = [];
         $hasAndBelongsToManyObjectsToRemove = [];
 
         if (array_key_exists($concatTable, $this->hasAndBelongsToManyToAdd)) {
@@ -466,6 +541,7 @@ class ERRelations {
             }
             $habtmObject = array_filter(array_diff($habtmObject, $hasAndBelongsToManyObjectsToRemove));
         }
+
         return $habtmObject;
     }
 
@@ -481,50 +557,38 @@ class ERRelations {
      * @return array
      */
 
-    protected function belongsTo($key, $model, $alias) {
+    protected function belongsTo($key, $model, $alias)
+    {
         $string = ucfirst($key);
-
         $belongsTo = $model->getNamespace().$string;
 
         if (array_key_exists($string, $model::belongsTo())) {
             $infosArray = $model::belongsTo()[$string];
 
-            if (array_key_exists('foreign_key', $infosArray)) {
-                $cleEtrangere = $infosArray['foreign_key'];
-            }
-
             if (array_key_exists('class_name', $infosArray)) {
                 $belongsTo = $infosArray['class_name'];
             }
-
-            if (!isset($cleEtrangere) && array_key_exists('inverse_of', $infosArray)) {
-                $cleEtrangere = $belongsTo::hasMany()[$infosArray['inverse_of']]['foreign_key'];
-            }
-
-            if (array_key_exists('polymorphic', $infosArray)) {
-                $cleEtrangere = $infosArray['polymorphic'].'_id';
-                $cleType      = $infosArray['polymorphic'].'_type';
-                $belongsTo    = $model->$cleType;
-            }
         }
 
-        if (!isset($cleEtrangere)) {
-            $cleEtrangere = $belongsTo::getIdentifier();
-        }
+        $cleEtrangere = $model->getRelationKeys($string);
 
-        if (!array_key_exists($key.$model->$cleEtrangere, $this->storedBelongsTo)) {
-            $this->storedBelongsTo[$key.$model->$cleEtrangere] = NULL;
+        $fks = $model->getIdentifierValue($model::READ_TO_STRING);
 
-            if ($model->$cleEtrangere !== NULL) {
-                $this->storedBelongsTo[$key.$model->$cleEtrangere] = $belongsTo::find($model->$cleEtrangere);
+        if (!array_key_exists($key.$fks, $this->storedBelongsTo)) {
+            $this->storedBelongsTo[$key.$fks] = null;
+
+            foreach ($cleEtrangere as $pk => $value) {
+                $rel[$value] = $model->$pk;
             }
 
-            if (!$this->storedBelongsTo[$key.$model->$cleEtrangere]) {
-                $this->storedBelongsTo[$key.$model->$cleEtrangere] = new $belongsTo;
-                return $this->storedBelongsTo[$key.$model->$cleEtrangere];
+            $this->storedBelongsTo[$key.$fks] = $belongsTo::find($rel);
+
+            if (!$this->storedBelongsTo[$key.$fks]) {
+                $this->storedBelongsTo[$key.$fks] = new $belongsTo;
+                return $this->storedBelongsTo[$key.$fks];
             }
         }
-        return $this->storedBelongsTo[$key.$model->$cleEtrangere];
+        return $this->storedBelongsTo[$key.$fks];
     }
 
 
@@ -539,7 +603,8 @@ class ERRelations {
      * @return NULL | array
      */
 
-    public function getRelations($key, $model, $alias = '') {
+    public function getRelations($key, $model, $alias = '')
+    {
         $string = ucfirst($key);
         if (in_array($string, $model::hasMany()) || array_key_exists($string, $model::hasMany())) {
             return $this->hasMany($key, $model, $alias);
@@ -550,7 +615,7 @@ class ERRelations {
         } elseif (in_array($string, $model::belongsTo()) || array_key_exists($string, $model::belongsTo())) {
             return $this->belongsTo($key, $model, $alias);
         }
-        return NULL;
+        return null;
     }
 
 
@@ -564,8 +629,10 @@ class ERRelations {
      * @param string model
      */
 
-    public static function setBelongsTo($string, $value, $model) {
+    public static function setBelongsTo($string, $value, $model)
+    {
         $belongsTo = $model->getNamespace().$string;
+
         if (array_key_exists($string, $model::belongsTo())) {
             $infosArray = $model::belongsTo()[$string];
 
@@ -582,16 +649,27 @@ class ERRelations {
             }
 
             if (array_key_exists('polymorphic', $infosArray)) {
-                $cleEtrangere    = $infosArray['polymorphic'].'_id';
-                $cleType         = $infosArray['polymorphic'].'_type';
+                $cleEtrangere = $infosArray['polymorphic'].'_id';
+                $cleType = $infosArray['polymorphic'].'_type';
                 $model->$cleType = get_class($value);
             }
         }
 
         if (!isset($cleEtrangere)) {
-            $cleEtrangere = $belongsTo::getIdentifier();
+            $cleEtrangere = $belongsTo::getIdentifier($belongsTo::READ_TO_ARRAY);
         }
-        $model->$cleEtrangere = $value->getIdentifierValue();
+
+        if(!is_array($cleEtrangere)) {
+            $cleEtrangere = [$cleEtrangere => $cleEtrangere];
+        }
+
+        $values = array_values($value->getIdentifierValue($model::READ_TO_ARRAY));
+
+        $i = 0;
+        foreach ($cleEtrangere as $key => $value) {
+            $model->$value = $values[$i];
+            $i++;
+        }
     }
 
 
@@ -604,14 +682,15 @@ class ERRelations {
      * @return array
      */
 
-    public static function getForeignKeys($relation) {
+    public static function getForeignKeys($model, $relation) {
         $keys = [];
 
         foreach ($relation as $value) {
             if(is_array($value) && isset($value['foreign_key'])) {
                 $keys[] = $value['foreign_key'];
             } elseif (is_string($value)) {
-                $keys[] = 'id_'.Text::camelToUnderscore($value);
+                $className = $model->getNamespace() . $value;
+                $keys[] = $className::getIdentifier($model::READ_TO_ARRAY);
             }
         }
 

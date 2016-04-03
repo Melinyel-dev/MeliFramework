@@ -3,6 +3,8 @@
 use System\Core\Hook;
 
 use System\Helpers\Session;
+use System\Helpers\Profiler;
+use System\Helpers\Lang;
 
 
 /*
@@ -91,6 +93,12 @@ Session::start();
 
 // Chargement de la configuration du noyau
 require CFG . DS . 'constants.php';
+
+// Configuration spécifique à l'environnement
+if(is_file(CFG . DS . $GLOBALS['conf']['environment'] . DS . 'constants.php')) {
+    require CFG . DS . $GLOBALS['conf']['environment'] . DS . 'constants.php';
+}
+
 require CFG . DS . 'globals.php';
 require CFG . DS . 'routes.php';
 require CFG . DS . 'template.php';
@@ -102,7 +110,7 @@ if ($GLOBALS['conf']['enable_hooks']) {
     Hook::enable();
 
     // Initialisation des hooks
-    require CFG.DS.'hooks.php';
+    require CFG . DS . 'hooks.php';
 
     $allHooks['pre_system']                  = [];
     $allHooks['pre_controller']              = [];
@@ -118,14 +126,29 @@ if ($GLOBALS['conf']['enable_hooks']) {
     Hook::set($allHooks);
 }
 
+// Gestion des langues
+if(isset($GLOBALS['conf']['lang'])) {
+    foreach ($GLOBALS['conf']['lang'] as $lang) {
+        Lang::getInstance()->load($lang);
+    }
+}
+
 
 // Connexion à la base de données
 $database = \System\Orm\ERDB::connect('default', $GLOBALS['databaseCfg']['host'], $GLOBALS['databaseCfg']['login'], $GLOBALS['databaseCfg']['password'], $GLOBALS['databaseCfg']['database'], $GLOBALS['databaseCfg']['port'], $GLOBALS['databaseCfg']['socket']);
+
+if($GLOBALS['conf']['environment'] == 'prod' || (isset($GLOBALS['conf']['profiling']) && $GLOBALS['conf']['profiling'] === false)) {
+    Profiler::disable();
+}
 
 
 // Connecion au serveur Memcache si activé
 if(isset($GLOBALS['conf']['memcache'])) {
     \System\Orm\ERCache::getInstance()->connect($GLOBALS['conf']['memcache']['host'], $GLOBALS['conf']['memcache']['port']);
+}
+
+if (extension_loaded ('newrelic')) {
+    newrelic_set_appname($GLOBALS['conf']['app_name']);
 }
 
 /* End of file */

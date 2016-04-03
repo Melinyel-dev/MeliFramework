@@ -5,7 +5,7 @@ $config = [
     'database' => 'melidev',
     'login' => 'melidev',
     'password' => 'melidev',
-    'port' => NULL,
+    'port' => null,
     'socket' => 'var/run/mysqld/mysqld.sock'
   ],
 
@@ -14,7 +14,7 @@ $config = [
     'database' => 'melidev',
     'login' => 'melidev',
     'password' => 'melidev',
-    'port' => NULL,
+    'port' => null,
     'socket' => 'var/run/mysqld/mysqld.sock'
   ],
 
@@ -23,7 +23,7 @@ $config = [
     'database' => 'melidev',
     'login' => 'melidev',
     'password' => 'melidev',
-    'port' => NULL,
+    'port' => null,
     'socket' => 'var/run/mysqld/mysqld.sock'
   ]
 ];

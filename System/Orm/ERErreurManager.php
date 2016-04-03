@@ -1,7 +1,5 @@
 <?php
-
 namespace System\Orm;
-
 use ArrayAccess;
 use Countable;
 use IteratorAggregate;
@@ -15,7 +13,6 @@ use Orb\Helpers\Erreur;
  */
 
 class ERErreurManager implements IteratorAggregate, ArrayAccess, Countable {
-
     protected $erreurs = [];
 
 
@@ -24,7 +21,6 @@ class ERErreurManager implements IteratorAggregate, ArrayAccess, Countable {
      *
      * @return int
      */
-
     public function count() {
         return count($this->erreurs);
     }

@@ -2,8 +2,7 @@
 
 namespace System\Orm;
 
-use Orb\Helpers\Text;
-
+use System\Helpers\Text;
 
 /**
  * ERQuery Class
@@ -13,17 +12,18 @@ use Orb\Helpers\Text;
  * @author anaeria
  */
 
+
 class ERQuery implements \IteratorAggregate, \ArrayAccess {
 
     // Query
-    public $belongsToDetails        = NULL;
-    protected $model                = NULL;
-    protected $tableAlias           = NULL;
+    public $belongsToDetails        = null;
+    protected $model                = null;
+    protected $tableAlias           = null;
     protected $resultColonnes       = [];
     protected $joinWhereTables      = [];
     protected $joinWhereContraintes = [];
     protected $joinSources          = [];
-    protected $joinFirstTable       = NULL;
+    protected $joinFirstTable       = null;
     protected $countFrom            = 0;
     protected $whereConditions      = [];
     protected $whereBinds           = ['types' => [], 'values' => []];
@@ -32,26 +32,28 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
     protected $havingConditions     = [];
     protected $havingBinds          = ['types' => [], 'values' => []];
     protected $orderBy              = [];
-    protected $limit                = NULL;
-    protected $offset               = NULL;
-    protected $fromExpr             = NULL;
-    protected $distinct             = FALSE;
-    protected $rawQuery             = NULL;
-    protected $queryExecuted        = FALSE;
+    protected $limit                = null;
+    protected $offset               = null;
+    protected $fromExpr             = null;
+    protected $distinct             = false;
+    protected $rawQuery             = null;
+    protected $queryExecuted        = false;
     protected $results              = [];
     protected $lightMode            = 0;
     protected $selectAliases        = [];
-    protected $cached               = NULL;
-    protected $sqlQuery             = NULL;
-    protected $bindParam            = NULL;
-    protected $first                = FALSE;
-    protected $last                 = FALSE;
+    protected $cached               = null;
+    protected $sqlQuery             = null;
+    protected $bindParam            = null;
+    protected $first                = false;
+    protected $last                 = false;
+    protected $index                = null;
+    protected $entity               = null;
     // NOTE: TEMPORAIRE
-    protected $autoSelectChild      = TRUE;
+    protected $autoSelectChild      = true;
 
     // Scopes
     protected $scopesToExecute        = [];
-    protected $unscoped               = FALSE;
+    protected $unscoped               = false;
 
 
     /**
@@ -63,7 +65,6 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
     public function __construct($model) {
         $this->model = $model;
     }
-
 
 
     ###########################################################################
@@ -144,9 +145,8 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
 
     public function offsetGet($offset) {
         $this->runQuery();
-        return isset($this->results[$offset]) ? $this->results[$offset] : NULL;
+        return isset($this->results[$offset]) ? $this->results[$offset] : null;
     }
-
 
 
     ############################################################################
@@ -163,7 +163,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
      */
 
     public function cache() {
-        $this->cached = TRUE;
+        $this->cached = true;
         return $this;
     }
 
@@ -177,7 +177,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
      */
 
     public function noCache() {
-        $this->cached = FALSE;
+        $this->cached = false;
         return $this;
     }
 
@@ -189,8 +189,6 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
     #
     ############################################################################
 
-
-    // -------------------------------------------------------------------------
 
     /**
      * Défini le résultat en lecture comme tableau associatif
@@ -216,7 +214,26 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         $model           = $this->model;
         $this->lightMode = 1;
         $tableAlias      = $this->tableAlias ? $this->tableAlias : $model::table();
-        $this->select($tableAlias . '.' . $model::getIdentifier());
+
+        foreach ($model::getIdentifier($model::READ_TO_ARRAY) as $col) {
+            $this->select($tableAlias . '.' . $col);
+        }
+
+        return $this;
+    }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Défini le modèle de lecture du résultat
+     *
+     * @param string
+     * @return object
+     */
+
+    public function entity($className) {
+        $this->entity = $className;
         return $this;
     }
 
@@ -237,6 +254,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
 
 
 
+
     ############################################################################
     #
     #  Scopes
@@ -251,7 +269,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
      */
 
     public function unscoped() {
-        $this->unscoped = TRUE;
+        $this->unscoped = true;
         return $this;
     }
 
@@ -265,7 +283,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
      * @return object
      */
 
-    public function unscope($scopeName = NULL) {
+    public function unscope($scopeName = null) {
         if (!$scopeName) {
             $this->scopesToExecute        = [];
         }
@@ -279,7 +297,6 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         }
         return $this;
     }
-
 
 
     ############################################################################
@@ -387,7 +404,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
      */
 
     public function distinct() {
-        $this->distinct = TRUE;
+        $this->distinct = true;
         return $this;
     }
 
@@ -405,6 +422,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         if (!is_string($query)) {
             throw new ERException(get_class($this->model) . '::rawQuery() expects paramter 1 to be a string, ' . gettype($query) . ' given');
         }
+
         $this->rawQuery = $query;
         return $this;
     }
@@ -420,8 +438,10 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
      */
 
     public function from($from) {
-        if (!is_string($from))
-                throw new ERException('EasyRecord::from() expects paramter 1 to be a string, ' . gettype($from) . ' given');
+        if (!is_string($from)) {
+            throw new ERException('EasyRecord::from() expects paramter 1 to be a string, ' . gettype($from) . ' given');
+        }
+
         $this->fromExpr = $from;
         return $this;
     }
@@ -498,7 +518,6 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
     }
 
 
-
     ############################################################################
     #
     #  Select
@@ -514,13 +533,14 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
      *
      * @return \EasyRecord
      */
+
     public function select() {
         $colonnes = func_get_args();
         if (!empty($colonnes)) {
             $colonnes = $this->normaliserSelectPlusieursColonnes($colonnes);
             foreach ($colonnes as $alias => $colonne) {
                 if (is_numeric($alias)) {
-                    $alias = NULL;
+                    $alias = null;
                 }
                 else {
                     $this->selectAliases[] = $alias;
@@ -531,11 +551,21 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
 
         if ($this->autoSelectChild) {
             $model = $this->model;
-            $this->selectSingle($model::getIdentifier());
+
+            foreach ($model::getIdentifier($model::READ_TO_ARRAY) as $col) {
+                $this->selectSingle($col);
+            }
 
             $relations = $this->model->relations();
-            foreach ($relations::getForeignKeys($model::belongsTo()) as $key) {
-                $this->selectSingle($key);
+
+            foreach ($relations::getForeignKeys($model, $model::belongsTo()) as $keys) {
+                if(is_array($keys)) {
+                    foreach ($keys as $key => $value) {
+                        $this->selectSingle($value);
+                    }
+                } else {
+                    $this->selectSingle($keys);
+                }
             }
         }
 
@@ -552,7 +582,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
      * @return object
      */
 
-    public function autoSelectChild($value = TRUE) {
+    public function autoSelectChild($value = true) {
         $this->autoSelectChild = (bool) $value;
         return $this;
     }
@@ -570,9 +600,9 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         $colonnes = $this->normaliserSelectPlusieursColonnes(func_get_args());
         foreach ($colonnes as $alias => $colonne) {
             if (is_numeric($alias)) {
-                $alias = NULL;
+                $alias = null;
 
-                if (stripos($colonne, ' AS ') !== FALSE) {
+                if (stripos($colonne, ' AS ') !== false) {
                     $str = explode(' AS ', $colonne);
                     array_shift($str);
 
@@ -589,7 +619,6 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         }
         return $this;
     }
-
 
 
     ############################################################################
@@ -611,7 +640,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
             return $this->ajoutWhere($args[0]);
         }
         elseif (count($args) > 1) {
-            if (strpos($args[0], '?') === FALSE && count($args) == 2) {
+            if (strpos($args[0], '?') === false && count($args) == 2) {
                 if (is_array($args[1])) {
                     if (count($args[1]) > 1) {
                         return $this->whereIn($args[0], $args[1]);
@@ -621,9 +650,12 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
                     }
                 }
                 else {
-                    if ($args[1] === NULL) return $this->whereNull($args[0]);
-                    else
-                            return $this->ajoutWhereSimple($args[0], '=', $args[1]);
+                    if ($args[1] === null) {
+                        return $this->whereNull($args[0]);
+                    }
+                    else {
+                        return $this->ajoutWhereSimple($args[0], '=', $args[1]);
+                    }
                 }
             } else {
                 $first_arg = array_shift($args);
@@ -653,7 +685,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
             }
         }
         else {
-            if ($valeur === NULL) {
+            if ($valeur === null) {
                 return $this->whereNotNull($colonne);
             }
             else {
@@ -820,7 +852,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
 
     public function whereNull($colonne) {
         $colonne = $this->formatColumn($colonne);
-        return $this->ajoutWhere(ERTools::quoteIdentifiant($colonne) . ' IS NULL');
+        return $this->ajoutWhere(ERTools::quoteIdentifiant($colonne) . ' IS null');
     }
 
 
@@ -835,7 +867,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
 
     public function whereNotNull($colonne) {
         $colonne = $this->formatColumn($colonne);
-        return $this->ajoutWhere(ERTools::quoteIdentifiant($colonne) . ' IS NOT NULL');
+        return $this->ajoutWhere(ERTools::quoteIdentifiant($colonne) . ' IS NOT null');
     }
 
 
@@ -862,11 +894,11 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         elseif (count($args) > 1) {
             if (ctype_alpha($args[0]) && count($args) == 2) {
                 if (is_array($args[1])) {
-                    if (count($valeurTab)){
+                    if (count($valeurTab)) {
                         return $this->havingIn($args[0], $args[1]);
                     }
                 } else {
-                    if ($args[1] === NULL) {
+                    if ($args[1] === null) {
                         return $this->havingNull($args[0]);
                     }
                     else {
@@ -902,7 +934,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
             }
         }
         else {
-            if ($valeur === NULL) {
+            if ($valeur === null) {
                 return $this->havingNotNull($valeur);
             }
             else {
@@ -1030,7 +1062,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
 
     public function havingIn($colonne, $valeurTab) {
         if (count($valeurTab)) {
-            $colonne  = $this->formatColumn($colonne, FALSE);
+            $colonne  = $this->formatColumn($colonne, false);
             $stringIn = $this->addHavingBinds($colonne, $valeurTab);
             return $this->ajoutHaving(ERTools::quoteIdentifiant($colonne) . ' IN (' . $stringIn . ')');
         }
@@ -1049,7 +1081,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
 
     public function havingNotIn($colonne, $valeurTab) {
         if (count($valeurTab)) {
-            $colonne  = $this->formatColumn($colonne, FALSE);
+            $colonne  = $this->formatColumn($colonne, false);
             $stringIn = $this->addHavingBinds($colonne, $valeurTab);
             return $this->ajoutHaving(ERTools::quoteIdentifiant($colonne) . ' NOT IN (' . $stringIn . ')');
         }
@@ -1066,8 +1098,8 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
      */
 
     public function havingNull($colonne) {
-        $colonne = $this->formatColumn($colonne, FALSE);
-        return $this->ajoutHaving(ERTools::quoteIdentifiant($colonne) . ' IS NULL');
+        $colonne = $this->formatColumn($colonne, false);
+        return $this->ajoutHaving(ERTools::quoteIdentifiant($colonne) . ' IS null');
     }
 
 
@@ -1081,8 +1113,8 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
      */
 
     public function havingNotNull($colonne) {
-        $colonne = $this->formatColumn($colonne, FALSE);
-        return $this->ajoutHaving(ERTools::quoteIdentifiant($colonne) . ' IS NOT NULL');
+        $colonne = $this->formatColumn($colonne, false);
+        return $this->ajoutHaving(ERTools::quoteIdentifiant($colonne) . ' IS NOT null');
     }
 
 
@@ -1102,7 +1134,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
 
     public function orderBy() {
         $args       = func_get_args();
-        $orderByStr = NULL;
+        $orderByStr = null;
         foreach ($args as $order) {
             if ($order) {
                 $order = trim($order);
@@ -1115,14 +1147,14 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
                     foreach ($tabArgs as $tabArg) {
                         $tabArg = trim($tabArg);
                         if (preg_match('/^[A-Za-z0-9_]+$/', $tabArg)) {
-                            $colonne         = $this->formatColumn($tabArg, FALSE);
+                            $colonne         = $this->formatColumn($tabArg, false);
                             $this->orderBy[] = ERTools::quoteIdentifiant($colonne);
                         }
                         else {
                             $elementsEgal     = explode('=', $tabArg);
                             $elementsSpace    = explode(' ', $elementsEgal[0]);
                             $elementsSpace[0] = trim($elementsSpace[0]);
-                            $elementsSpace[0] = $this->formatColumn($elementsSpace[0], FALSE);
+                            $elementsSpace[0] = $this->formatColumn($elementsSpace[0], false);
                             $elementsSpace[0] = ERTools::quoteIdentifiant($elementsSpace[0]);
                             $elementsEgal[0]  = implode(' ', $elementsSpace);
                             $tabArg           = implode('=', $elementsEgal);
@@ -1197,7 +1229,6 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
     }
 
 
-
     ############################################################################
     #
     #  Limit / Offset / GroupBy
@@ -1261,12 +1292,26 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
     public function groupBy() {
         $args = func_get_args();
         foreach ($args as $colonne) {
-            $colonne         = $this->formatColumn($colonne, FALSE);
+            $colonne         = $this->formatColumn($colonne, false);
             $this->groupBy[] = ERTools::quoteIdentifiant($colonne);
         }
         return $this;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Instruction GROUP BY par expression
+     *
+     * @param string
+     * @return object
+     */
+
+    public function groupByExpr($expr) {
+        $this->groupBy[] = ERTools::quoteIdentifiant($expr);
+        return $this;
+    }
 
 
     ############################################################################
@@ -1277,6 +1322,21 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
 
 
     /**
+     * Défini l'indexation du tableau de résultat
+     *
+     * @param string index
+     * @return object
+     */
+
+    public function index($index) {
+        $this->index = $index;
+        return $this;
+    }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
      * Récupère le premier élément d'une requête
      *
      * @param int n
@@ -1284,7 +1344,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
      */
 
     public function first($n = 1) {
-        $this->first = TRUE;
+        $this->first = true;
         return $this->take($n);
     }
 
@@ -1299,7 +1359,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
      */
 
     public function last($n = 1) {
-        $this->last = TRUE;
+        $this->last = true;
         return $this->take($n);
     }
 
@@ -1323,7 +1383,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
 
         if (empty($lignes)) {
             if ($n == 1) {
-                return FALSE;
+                return false;
             }
             else {
                 return [];
@@ -1373,21 +1433,91 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
      */
 
     public function find($id) {
-        if (!is_array($id)) {
-            return $this->findCacheFull($id);
-        }
 
         $model = $this->model;
-        return $this->whereIn($model::getIdentifier(), $id);
+        $pks = $model::getIdentifier($model::READ_TO_ARRAY);
+
+        if(count($pks) == 1) {
+            if(is_array($id)) {
+                if(count($id) == 1) {
+                    return $this->findCacheFull(reset($id));
+                } else {
+                    return $this->whereIn(reset($pks), $id)->all();
+                }
+            }
+            return $this->findCacheFull($id);
+        }
+        else {
+            if(is_array($id)) {
+                if(is_array(reset($id)[0])) {
+                    return $this->whereIn($pks, $id)->all();
+                }
+                return $this->findCacheFull($id);
+            } else {
+                throw new ERException(get_class($this->model) . '::find() wrong identifier. Expected array for multiple primary keys.');
+            }
+        }
     }
-
-
 
     #############################################################################
     #
     #  Jointures
     #
     #############################################################################
+
+
+    /**
+     * Effectue une jointure en utilisant une relation potentielle
+     *
+     * @param string
+     * @return object
+     */
+
+    public function with($with) {
+        $model = $this->model;
+
+        $path = explode('::', $with);
+        $steps = [];
+        $currentRelation = $this->model;
+
+        foreach ($path as $step) {
+            if(in_array($step, $model::belongsTo()) || array_key_exists($step, $model::belongsTo()) || in_array($step, $model::hasOne()) || array_key_exists($step, $model::hasOne())) {
+
+                $steps[] = $step;
+
+                $WithClass = $model->getRelationClassName($step);
+
+                $cleEtrangere = $model->getRelationKeys($step);
+
+                $currentRelation->preparePotentialRelation($step);
+
+                $currentRelation = $currentRelation->getPotentialRelation($step);
+
+                // Seulement si pas de select et si premier with
+                if(count($steps) == 1) {
+                    $this->selectExpr($model::table() . '.*');
+                }
+
+                foreach($WithClass::mappingConfig()['fields'] as $name => $config) {
+                    $this->selectExpr($WithClass::table() . '.' . $name . ' AS _' . implode('_', $steps) . '_' . $name);
+                }
+
+                // Construire la relation en join
+                $conditions = [];
+                foreach($cleEtrangere as $key => $foreign_key) {
+                    $conditions[] = ['identifier' => $WithClass::table() . '.' . $foreign_key, 'foreign_key' => $model::table() . '.' . $key];
+                }
+
+                $this->join($WithClass::database() . '.' . $WithClass::table(), $conditions);
+                $model = new $WithClass;
+
+            } else {
+                throw new ERException(get_class($this->model) . '::with() wrong relation. Expected belongsTo or hasOne.');
+            }
+        }
+
+        return $this;
+    }
 
 
     /**
@@ -1399,15 +1529,15 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
     public function includes() {
         $args             = func_get_args();
         $key              = array_shift($args);
-        $alias            = NULL;
-        $aliasConcatTable = NULL;
+        $alias            = null;
+        $aliasConcatTable = null;
         $condition        = [];
-        $firstAlias       = TRUE;
+        $firstAlias       = true;
 
         foreach ($args as $arg) {
             if (!is_array($arg)) {
                 if ($firstAlias) {
-                    $firstAlias = FALSE;
+                    $firstAlias = false;
                     $alias      = $arg;
                 }
                 else {
@@ -1420,7 +1550,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         }
 
         foreach ($this->joinsIncludes($key, $alias, $aliasConcatTable, $condition) as $detail) {
-            $this->leftJoin($detail['table'], [$detail['cleEtrangere'] => $detail['identifier'], $detail['condition']], $detail['alias']);
+            $this->leftJoin($detail['table'], $detail['constraints'], $detail['alias']);
         }
 
         return $this;
@@ -1438,9 +1568,9 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
      * @return object
      */
 
-    public function joins($key, $alias = NULL, $aliasConcatTable = NULL) {
+    public function joins($key, $alias = null, $aliasConcatTable = null) {
         foreach ($this->joinsIncludes($key, $alias, $aliasConcatTable) as $detail) {
-            $this->join($detail['table'], [$detail['identifier'] => $detail['cleEtrangere']], $detail['alias']);
+            $this->join($detail['table'], $detail['constraints'], $detail['alias']);
         }
         return $this;
     }
@@ -1456,12 +1586,13 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
 
     public function join() {
         $args = func_get_args();
+
         if (count($args) == 1) {
             $this->joinSources[] = 'JOIN ' . $args[0];
             return $this;
         }
         elseif (count($args) > 1) {
-            $tableAlias = isset($args[2]) ? $args[2] : NULL;
+            $tableAlias = isset($args[2]) ? $args[2] : null;
             return $this->ajoutJoinSource('', $args[0], $args[1], $tableAlias);
         }
     }
@@ -1477,12 +1608,13 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
 
     public function leftJoin() {
         $args = func_get_args();
+
         if (count($args) == 1) {
             $this->joinSources[] = 'LEFT OUTER JOIN ' . $args[0];
             return $this;
         }
         elseif (count($args) > 1) {
-            $tableAlias = isset($args[2]) ? $args[2] : NULL;
+            $tableAlias = isset($args[2]) ? $args[2] : null;
             return $this->ajoutJoinSource('LEFT OUTER', $args[0], $args[1], $tableAlias);
         }
     }
@@ -1498,12 +1630,13 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
 
     public function rightJoin() {
         $args = func_get_args();
+
         if (count($args) == 1) {
             $this->joinSources[] = 'RIGHT OUTER JOIN ' . $args[0];
             return $this;
         }
         elseif (count($args) > 1) {
-            $tableAlias = isset($args[2]) ? $args[2] : NULL;
+            $tableAlias = isset($args[2]) ? $args[2] : null;
             return $this->ajoutJoinSource('RIGHT OUTER', $args[0], $args[1], $tableAlias);
         }
     }
@@ -1519,12 +1652,13 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
 
     public function fullJoin() {
         $args = func_get_args();
+
         if (count($args) == 1) {
             $this->joinSources[] = 'FULL OUTER JOIN ' . $args[0];
             return $this;
         }
         elseif (count($args) > 1) {
-            $tableAlias = isset($args[2]) ? $args[2] : NULL;
+            $tableAlias = isset($args[2]) ? $args[2] : null;
             return $this->ajoutJoinSource('FULL OUTER', $args[0], $args[1], $tableAlias);
         }
     }
@@ -1540,16 +1674,16 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
 
     public function innerJoin() {
         $args = func_get_args();
+
         if (count($args) == 1) {
             $this->joinSources[] = 'INNER JOIN ' . $args[0];
             return $this;
         }
         elseif (count($args) > 1) {
-            $tableAlias = isset($args[2]) ? $args[2] : NULL;
+            $tableAlias = isset($args[2]) ? $args[2] : null;
             return $this->ajoutJoinSource('INNER', $args[0], $args[1], $tableAlias);
         }
     }
-
 
 
     ############################################################################
@@ -1568,21 +1702,34 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
 
     private function findCacheFull($id) {
 
-        $result    = FALSE;
+        $result    = false;
         $model     = $this->model;
         $className = get_class($model);
 
-        $isCache = $model::cacheActivation() == 'full';
+        $isCache = $model::cacheActivation() == 'full' && $this->cache;
 
         if ($isCache) {
+            if(is_array($id)) {
+                $id = implode('_', $id);
+            }
             $result = ERCache::getInstance()->nsGet('EasyRecordCache', $className . '_' . $id . $model::cacheActivation() . $model::cacheTime());
         }
 
         if (!$result) {
-            $this->where($model::getIdentifier(), $id);
+            if(is_array($id)) {
+                foreach ($id as $col => $value) {
+                    $this->where($col, $value);
+                }
+            } else {
+                $this->where($model::getIdentifier($model::READ_TO_STRING), $id);
+            }
+
             $result = $this->take();
 
             if ($isCache && $result) {
+                if(is_array($id)) {
+                    $id = implode('_', $id);
+                }
                 ERCache::getInstance()->nsSet('EasyRecordCache', $className . '_' . $id . $model::cacheActivation() . $model::cacheTime(), $result, $model::cacheTime());
             }
         }
@@ -1630,13 +1777,15 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
      * @return object
      */
 
-    private function ajoutResultatColonne($expr, $alias = NULL) {
-        if ($alias !== NULL) {
+    private function ajoutResultatColonne($expr, $alias = null) {
+        if ($alias !== null) {
             $expr .= ' AS ' . ERTools::quoteIdentifiant($alias);
         }
-        if (array_search($expr, $this->resultColonnes) === FALSE) {
+
+        if (array_search($expr, $this->resultColonnes) === false) {
             $this->resultColonnes[] = $expr;
         }
+
         return $this;
     }
 
@@ -1683,59 +1832,42 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
      * @return object
      */
 
-    private function ajoutJoinSource($joinOperateur, $table, $contrainte, $tableAlias = NULL) {
+    private function ajoutJoinSource($joinOperateur, $table, $contraintes, $tableAlias = null) {
         $model         = $this->model;
         $joinOperateur = trim($joinOperateur . ' JOIN');
         $table         = ERTools::quoteIdentifiant($table);
 
-        if ($tableAlias !== NULL) {
+        if ($tableAlias !== null) {
             $tableAlias = ERTools::quoteIdentifiant($tableAlias);
             $table .= ' ' . $tableAlias;
         }
 
-        reset($contrainte);
-        $premiereColonne = key($contrainte);
-        $secondeColonne  = $contrainte[$premiereColonne];
-        $condition       = '';
+        $constraints = [];
 
-        if (array_key_exists(0, $contrainte) && $contrainte[0]) {
-            foreach ($contrainte[0] as $conditionPremiereColonne => $conditionSecondeColonne) {
-
-                if (is_numeric($conditionPremiereColonne)) {
-                    $condition .= ' AND (' . $conditionSecondeColonne . ')';
+        foreach ($contraintes as $contrainte) {
+            if (!$this->joinFirstTable) {
+                if (substr_count($contrainte['identifier'], '.') == 1) {
+                    $this->joinFirstTable = explode('.', $contrainte['identifier'])[0];
                 }
                 else {
-                    $type_colonne = 's';
+                    $staticTable          = $model::table();
+                    $tableAlias           = $this->tableAlias ? $this->tableAlias : $staticTable;
+                    $this->joinFirstTable = ERTools::quoteIdentifiant($tableAlias);
+                }
+            }
 
-                    if (array_key_exists($conditionPremiereColonne, $model::mapping())) {
-                        $type_colonne = $model::mapping()[$conditionPremiereColonne]['type'][0];
-                    }
-                    $conditionPremiereColonne = $this->formatColumn($conditionPremiereColonne);
-                    $condition .= ' AND ' . ERTools::quoteIdentifiant($conditionPremiereColonne) . ' = ?';
+            $premiereColonne     = $this->formatColumn($contrainte['foreign_key']);
+            $secondeColonne      = $this->formatColumn($contrainte['identifier']);
+            $constraints[]       = ERTools::quoteIdentifiant($premiereColonne) . ' = ' . ERTools::quoteIdentifiant($secondeColonne);
 
-                    $arrayBinds             = $this->joinBinds;
-                    $arrayBinds['types'][]  = $type_colonne;
-                    $arrayBinds['values'][] = $conditionSecondeColonne;
-
-                    $this->joinBinds = $arrayBinds;
+            if(isset($contrainte['condition']) && is_array($contrainte['condition'])) {
+                foreach ($contrainte['condition'] as $value) {
+                    $constraints[] = $value;
                 }
             }
         }
 
-        if (!$this->joinFirstTable) {
-            if (substr_count($secondeColonne, '.') == 1) {
-                $this->joinFirstTable = explode('.', $secondeColonne)[0];
-            }
-            else {
-                $staticTable          = $model::table();
-                $tableAlias           = $this->tableAlias ? $this->tableAlias : $staticTable;
-                $this->joinFirstTable = ERTools::quoteIdentifiant($tableAlias);
-            }
-        }
-        $premiereColonne     = $this->formatColumn($premiereColonne);
-        $secondeColonne      = $this->formatColumn($secondeColonne);
-        $contrainte          = ERTools::quoteIdentifiant($premiereColonne) . ' = ' . ERTools::quoteIdentifiant($secondeColonne);
-        $this->joinSources[] = $joinOperateur . ' ' . $table . ' ON ' . $contrainte . $condition;
+        $this->joinSources[] = $joinOperateur . ' ' . $table . ' ON ' . implode(' AND ', $constraints);
 
         return $this;
     }
@@ -1757,7 +1889,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         $type     = 's';
 
         if (array_key_exists($colonne, $model::mapping())) {
-            $type     = $model::mapping()[$colonne]['type'][0];
+            $type = $model::mapping()[$colonne]['type'][0];
         }
 
         foreach ($valeurTab as $value) {
@@ -1765,7 +1897,6 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
             $this->whereBinds['values'][] = $value;
             $aryIMark[]                   = '?';
         }
-
         return implode(', ', $aryIMark);
     }
 
@@ -1786,7 +1917,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         $type     = 's';
 
         if (array_key_exists($colonne, $model::mapping())) {
-            $type     = $model::mapping()[$colonne]['type'][0];
+            $type = $model::mapping()[$colonne]['type'][0];
         }
 
         foreach ($valeurTab as $value) {
@@ -1794,7 +1925,6 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
             $this->havingBinds['values'][] = $value;
             $aryIMark[]                    = '?';
         }
-
         return implode(', ', $aryIMark);
     }
 
@@ -1825,10 +1955,8 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
      * @return object
      */
 
-    private function selectSingle($colonne, $alias = NULL) {
-        if ($colonne !== '*') {
-            $colonne = $this->formatColumn($colonne);
-        }
+    private function selectSingle($colonne, $alias = null) {
+        if ($colonne !== '*') $colonne = $this->formatColumn($colonne);
         return $this->ajoutResultatColonne(ERTools::quoteIdentifiant($colonne), $alias);
     }
 
@@ -1845,9 +1973,11 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
 
     private function appelFonctionDbAgregat($fonctionSql, $colonne) {
         $fonctionSql = strtoupper($fonctionSql);
+
         if ('*' != $colonne) {
             $colonne = ERTools::quoteIdentifiant($colonne);
         }
+
         $this->selectExpr([$fonctionSql . '(' . $colonne . ')' => $fonctionSql]);
         return $this;
     }
@@ -1885,7 +2015,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         $type_colonne           = 's';
 
         if (array_key_exists($colonneOriginale, $model::mapping())) {
-            $type_colonne       = $model::mapping()[$colonneOriginale]['type'][0];
+            $type_colonne = $model::mapping()[$colonneOriginale]['type'][0];
         }
 
         $bindType               = $type . 'Binds';
@@ -1927,7 +2057,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
      * @return object
      */
 
-    private function joinsIncludes($key, $alias, $aliasConcatTable = NULL, $condition = []) {
+    private function joinsIncludes($key, $alias, $aliasConcatTable = null, $condition = []) {
         $model       = $this->model;
         $string      = ucfirst($key);
         $staticTable = $model::table();
@@ -1945,7 +2075,8 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         elseif (in_array($string, $model::hasAndBelongsToMany()) || array_key_exists($string, $model::hasAndBelongsToMany())) {
             return $this->joinsIncludesHasAndBelongsToMany($key, $alias, $aliasConcatTable, $condition);
         }
-        throw new ERException('EasyRecord::joinsIncludes() parameter 1 is not a known relationship', 1);
+
+        throw new ERException('EasyRecord::joinsIncludes() parameter 1 ('.$key.') is not a known relationship', 1);
     }
 
 
@@ -1973,6 +2104,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         }
 
         $belongsTo = get_class($model);
+
         if (array_key_exists($belongsTo, $through::belongsTo())) {
             $infosArray = $through::belongsTo()[$belongsTo];
 
@@ -1981,27 +2113,26 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
             }
 
             if (array_key_exists('class_name', $infosArray)) {
-                $belongsTo = $this->model->getNamespace() . $infosArray['class_name'];
+                $belongsTo = $model->getNamespace() . $infosArray['class_name'];
             }
 
             if (!isset($cleEtrangereBelongsTo) && array_key_exists('inverse_of', $infosArray)) {
                 $cleEtrangereBelongsTo = $belongsTo::hasMany()[$infosArray['inverse_of']]['foreign_key'];
             }
         }
-
         if (!isset($cleEtrangereBelongsTo)) {
-            $cleEtrangereBelongsTo = $model::getIdentifier();
+            $cleEtrangereBelongsTo = $model::getIdentifier($model::READ_TO_ARRAY);
         }
 
-        if (array_key_exists($hasMany, $through::belongsTo())) {
-            $infosArray = $through::belongsTo()[$hasMany];
+        if (array_key_exists($key, $through::hasMany())) {
+            $infosArray = $through::hasMany()[$key];
 
             if (array_key_exists('foreign_key', $infosArray)) {
                 $cleEtrangereHasMany = $infosArray['foreign_key'];
             }
 
             if (array_key_exists('class_name', $infosArray)) {
-                $hasMany = $this->model->getNamespace() . $infosArray['class_name'];
+                $hasMany = $model->getNamespace() . $infosArray['class_name'];
             }
 
             if (!isset($cleEtrangereHasMany) && array_key_exists('inverse_of', $infosArray)) {
@@ -2010,7 +2141,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         }
 
         if (!isset($cleEtrangereHasMany)) {
-            $cleEtrangereHasMany = $hasMany::getIdentifier();
+            $cleEtrangereHasMany = $hasMany::getIdentifier($hasMany::READ_TO_ARRAY);
         }
 
         if (!$alias) {
@@ -2021,11 +2152,45 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
             $aliasConcatTable = $through::table();
         }
 
-        $throughDatabase     = $through::database();
+        $throughDatabase = $through::database();
 
-        return [['table' => $throughDatabase . '.' . $through::table(), 'cleEtrangere' => $aliasConcatTable . '.' . $cleEtrangereBelongsTo, 'identifier' => $tableAlias . '.' . $model::getIdentifier(), 'alias' => $aliasConcatTable, 'condition' => []],
-            ['table' => $throughDatabase . '.' . $hasMany::table(), 'cleEtrangere' => $aliasConcatTable . '.' . $cleEtrangereHasMany, 'identifier' => $alias . '.' . $hasMany::getIdentifier(), 'alias' => $alias, 'condition' => $condition]
-        ];
+        if(!is_array($cleEtrangereBelongsTo)) {
+            $cleEtrangereBelongsTo = [$cleEtrangereBelongsTo];
+        }
+
+        if(!is_array($cleEtrangereHasMany)) {
+            $cleEtrangereHasMany = [$cleEtrangereHasMany];
+        }
+
+        $constraintsBelongsTo = [];
+        $constraintsHasMany   = [];
+
+        foreach ($cleEtrangereBelongsTo as $key) {
+            $constraintsBelongsTo[] = [
+                'foreign_key' => $aliasConcatTable . '.' . $key,
+                'identifier'   => $tableAlias . '.' . $key,
+                'condition'    => []
+            ];
+        }
+
+        foreach ($cleEtrangereHasMany as $key) {
+            $constraintsHasMany[] = [
+                'foreign_key' => $aliasConcatTable . '.' . $key,
+                'identifier'   => $alias . '.' . $key,
+                'condition'    => $condition
+            ];
+        }
+
+        return [
+                 ['table'       => $throughDatabase . '.' . $through::table(),
+                 'alias'        => $aliasConcatTable,
+                 'constraints'  => $constraintsBelongsTo
+                 ],
+                 ['table'       => $throughDatabase . '.' . $hasMany::table(),
+                 'alias'        => $alias,
+                 'constriants'  => $constraintsHasMany
+                ]
+            ];
     }
 
 
@@ -2046,11 +2211,12 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         $string      = ucfirst($key);
         $staticTable = $model::table();
         $tableAlias  = $this->tableAlias ? $this->tableAlias : $staticTable;
-        $hasMany     = $this->model->getNamespace() . $string;
+        $hasMany     = $model->getNamespace() . $string;
 
         if ($hasMany[strlen($hasMany) - 1] == 's') {
             $hasMany = substr($hasMany, 0, strlen($hasMany) - 1);
         }
+
         if (array_key_exists($string, $model::hasMany())) {
             $infosArray = $model::hasMany()[$string];
 
@@ -2059,26 +2225,45 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
             }
 
             if (array_key_exists('class_name', $infosArray)) {
-                $hasMany = $this->model->getNamespace() . $infosArray['class_name'];
+                $hasMany = $model->getNamespace() . $infosArray['class_name'];
             }
 
             if (!isset($cleEtrangere) && array_key_exists('inverse_of', $infosArray)) {
                 $cleEtrangere = $hasMany::belongsTo()[$infosArray['inverse_of']]['foreign_key'];
             }
+
             if (array_key_exists('through', $infosArray)) {
                 return $this->joinsIncludesHasManyThrough($key, $alias, $aliasConcatTable, $condition, $infosArray, $hasMany, $tableAlias);
             }
         }
-
         if (!isset($cleEtrangere)) {
-            $cleEtrangere = $model::getIdentifier();
+            $cleEtrangere = $model::getIdentifier($model::READ_TO_ARRAY);
         }
 
         if (!$alias) {
             $alias = $hasMany::table();
         }
 
-        return [['table' => $hasMany::database() . '.' . $hasMany::table(), 'cleEtrangere' => $alias . '.' . $cleEtrangere, 'alias' => $alias, 'identifier' => $tableAlias . '.' . $model::getIdentifier(), 'condition' => $condition]];
+        if(!is_array($cleEtrangere)) {
+            $cleEtrangere = [$cleEtrangere];
+        }
+
+        $constraints = [];
+
+        foreach ($cleEtrangere as $identifier => $key) {
+            $constraints[] = [
+                'foreign_key' => $alias . '.' . $key,
+                'identifier'   => $tableAlias . '.' . $identifier,
+                'condition'    => $condition
+            ];
+        }
+
+        return [
+                ['table'      => $hasMany::database() . '.' . $hasMany::table(),
+                'alias'       => $alias,
+                'constraints' => $constraints
+                ]
+            ];
     }
 
 
@@ -2099,17 +2284,17 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         $string      = ucfirst($key);
         $staticTable = $model::table();
         $tableAlias  = $this->tableAlias ? $this->tableAlias : $staticTable;
-        $hasOne      = $this->model->getNamespace() . $string;
+        $hasOne      = $model->getNamespace() . $string;
 
         if (array_key_exists($string, $model::hasOne())) {
-            $infosArray = $model::hasOne()[$string];
+            $infosArray   = $model::hasOne()[$string];
 
             if (array_key_exists('foreign_key', $infosArray)) {
                 $cleEtrangere = $infosArray['foreign_key'];
             }
 
             if (array_key_exists('class_name', $infosArray)) {
-                $hasOne = $this->model->getNamespace() . $infosArray['class_name'];
+                $hasOne = $model->getNamespace() . $infosArray['class_name'];
             }
 
             if (!isset($cleEtrangere) && array_key_exists('inverse_of', $infosArray)) {
@@ -2118,14 +2303,33 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         }
 
         if (!isset($cleEtrangere)) {
-            $cleEtrangere = $model::getIdentifier();
+            $cleEtrangere = $model::getIdentifier($model::READ_TO_ARRAY);
         }
 
         if (!$alias) {
             $alias = $hasOne::table();
         }
 
-        return [['table' => $hasOne::database() . '.' . $hasOne::table(), 'cleEtrangere' => $alias . '.' . $cleEtrangere, 'alias' => $alias, 'identifier' => $tableAlias . '.' . $model::getIdentifier(), 'condition' => $condition]];
+        if(!is_array($cleEtrangere)) {
+            $cleEtrangere = [$cleEtrangere];
+        }
+
+        $constraints = [];
+
+        foreach ($cleEtrangere as $identifier => $key) {
+            $constraints[] = [
+                'foreign_key' => $alias . '.' . $key,
+                'identifier' => $tableAlias . '.' . $identifier,
+                'condition' => $condition
+            ];
+        }
+
+        return [
+                ['table' => $hasOne::database() . '.' . $hasOne::table(),
+                'alias' => $alias,
+                'constraints' => $constraints
+                ]
+            ];
     }
 
 
@@ -2146,17 +2350,17 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         $string      = ucfirst($key);
         $staticTable = $model::table();
         $tableAlias  = $this->tableAlias ? $this->tableAlias : $staticTable;
-        $belongsTo   = $this->model->getNamespace() . $string;
+        $belongsTo   = $model->getNamespace() . $string;
 
         if (array_key_exists($string, $model::belongsTo())) {
-            $infosArray = $model::belongsTo()[$string];
+            $infosArray   = $model::belongsTo()[$string];
 
             if (array_key_exists('foreign_key', $infosArray)) {
                 $cleEtrangere = $infosArray['foreign_key'];
             }
 
             if (array_key_exists('class_name', $infosArray)) {
-                $belongsTo = $this->model->getNamespace() . $infosArray['class_name'];
+                $belongsTo = $model->getNamespace() . $infosArray['class_name'];
             }
 
             if (!isset($cleEtrangere) && array_key_exists('inverse_of', $infosArray)) {
@@ -2165,14 +2369,33 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         }
 
         if (!isset($cleEtrangere)) {
-            $cleEtrangere = $belongsTo::getIdentifier();
+            $cleEtrangere = $belongsTo::getIdentifier($belongsTo::READ_TO_ARRAY);
         }
 
         if (!$alias) {
             $alias = $belongsTo::table();
         }
 
-        return [['table' => $belongsTo::database() . '.' . $belongsTo::table(), 'cleEtrangere' => $alias . '.' . $belongsTo::getIdentifier(), 'alias' => $alias, 'identifier' => $tableAlias . '.' . $cleEtrangere, 'condition' => $condition]];
+        if(!is_array($cleEtrangere)) {
+            $cleEtrangere = [$cleEtrangere];
+        }
+
+        $constraints = [];
+
+        foreach ($cleEtrangere as $identifier => $key) {
+            $constraints[] = [
+                'foreign_key' => $alias . '.' . $identifier,
+                'identifier'   => $tableAlias . '.' . $key,
+                'condition'    => $condition
+            ];
+        }
+
+        return [
+                ['table'      => $belongsTo::database() . '.' . $belongsTo::table(),
+                'alias'       => $alias,
+                'constraints' => $constraints
+                ]
+            ];
     }
 
 
@@ -2193,22 +2416,23 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         $string              = ucfirst($key);
         $staticTable         = $model::table();
         $tableAlias          = $this->tableAlias ? $this->tableAlias : $staticTable;
-        $hasAndBelongsToMany = $this->model->getNamespace() . $string;
+        $hasAndBelongsToMany = $model->getNamespace() . $string;
 
         if ($hasAndBelongsToMany[strlen($hasAndBelongsToMany) - 1] == 's') {
             $hasAndBelongsToMany = substr($hasAndBelongsToMany, 0, strlen($hasAndBelongsToMany) - 1);
         }
+
         $database = $model::database();
 
         if (array_key_exists($string, $model::hasAndBelongsToMany())) {
             $infosArray = $model::hasAndBelongsToMany()[$string];
 
             if (array_key_exists('class_name', $infosArray)) {
-                $hasAndBelongsToMany = $this->model->getNamespace() . $infosArray['class_name'];
+                $hasAndBelongsToMany     = $model->getNamespace() . $infosArray['class_name'];
             }
 
             if (array_key_exists('inverse_of', $infosArray)) {
-                $infosArray = $hasAndBelongsToMany::hasAndBelongsToMany()[$infosArray['inverse_of']];
+                $infosArray              = $hasAndBelongsToMany::hasAndBelongsToMany()[$infosArray['inverse_of']];
             }
 
             if (array_key_exists('association_foreign_key', $infosArray)) {
@@ -2216,36 +2440,40 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
             }
 
             if (array_key_exists('foreign_key', $infosArray)) {
-                $concatCleEtrangere = $infosArray['foreign_key'];
+                $concatCleEtrangere      = $infosArray['foreign_key'];
             }
 
             if (array_key_exists('table', $infosArray)) {
-                $concatTable = $infosArray['table'];
+                $concatTable             = $infosArray['table'];
             }
 
             if (array_key_exists('database', $infosArray)) {
-                $database = $infosArray['database'];
+                $database                = $infosArray['database'];
             }
         }
 
         if (!isset($associationCleEtrangere)) {
-            $associationCleEtrangere = $hasAndBelongsToMany::getIdentifier();
+            $associationCleEtrangere = $hasAndBelongsToMany::getIdentifier($hasAndBelongsToMany::READ_TO_ARRAY);
         }
 
         if (!isset($concatCleEtrangere)) {
-            $concatCleEtrangere = $model::getIdentifier();
+            $concatCleEtrangere = $model::getIdentifier($model::READ_TO_ARRAY);
         }
 
         $habtmTable = $hasAndBelongsToMany::table();
         $objetTable = $hasAndBelongsToMany::database() . '.' . $habtmTable;
 
         if (!isset($concatTable)) {
-            if ($habtmTable < $staticTable)
-                    $concatTable = $habtmTable . '_' . $staticTable;
-            else $concatTable = $staticTable . '_' . $habtmTable;
+            if ($habtmTable < $staticTable){
+                $concatTable = $habtmTable . '_' . $staticTable;
+            }
+            else {
+                $concatTable = $staticTable . '_' . $habtmTable;
+            }
         }
 
         $concatTableDb = $database . '.' . $concatTable;
+
         if (!$alias) {
             $alias = $habtmTable;
         }
@@ -2254,9 +2482,55 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
             $aliasConcatTable = $concatTable;
         }
 
-        return [['table' => $concatTableDb, 'cleEtrangere' => $aliasConcatTable . '.' . $concatCleEtrangere, 'identifier' => $tableAlias . '.' . $model::getIdentifier(), 'alias' => $aliasConcatTable, 'condition' => $condition],
-            ['table' => $objetTable, 'cleEtrangere' => $aliasConcatTable . '.' . $associationCleEtrangere, 'identifier' => $alias . '.' . $hasAndBelongsToMany::getIdentifier(), 'alias' => $alias, 'condition' => $condition]
+        if(!is_array($associationCleEtrangere)) {
+            $associationCleEtrangere = [$associationCleEtrangere];
+        }
+
+        if(!is_array($concatCleEtrangere)) {
+            $concatCleEtrangere = [$concatCleEtrangere];
+        }
+
+        $constraintsAssociation = [];
+        $constraintsConcat      = [];
+
+        foreach ($associationCleEtrangere as $identifier => $key) {
+
+            if($identifier == 0) {
+                $identifier = $key;
+            }
+
+            $constraintsAssociation[] = [
+                'foreign_key' => $aliasConcatTable . '.' . $key,
+                'identifier' => $alias . '.' . $identifier,
+                'condition' => $condition
+            ];
+        }
+
+        foreach ($concatCleEtrangere as $identifier => $key) {
+
+            if($identifier == 0) {
+                $identifier = $key;
+            }
+
+            $constraintsConcat[] = [
+                'foreign_key' => $aliasConcatTable . '.' . $key,
+                'identifier' => $tableAlias . '.' . $identifier,
+                'condition' => $condition
+            ];
+        }
+
+        $out = [
+                ['table' => $concatTableDb,
+                'alias' => $aliasConcatTable,
+                'constraints' => $constraintsConcat
+
+                ],
+                ['table' => $objetTable,
+                'alias' => $alias,
+                'constraints' => $constraintsAssociation
+                ]
         ];
+        return $out;
     }
 
 
@@ -2270,8 +2544,10 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
 
     private function selectAll() {
         $colonnes = func_get_args();
+
         if (!empty($colonnes)) {
             $colonnes = $this->normaliserSelectPlusieursColonnes($colonnes);
+
             foreach ($colonnes as $colonne) {
                 $this->selectSingle($colonne . '.*');
             }
@@ -2290,10 +2566,10 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
      * @return string
      */
 
-    private function formatColumn($colonne, $check = TRUE) {
+    private function formatColumn($colonne, $check = true) {
         $model = $this->model;
-        if (($check || !in_array($colonne, $this->selectAliases)) && strpos($colonne, '.') === FALSE) {
-            if ($this->tableAlias !== NULL) {
+        if (($check || !in_array($colonne, $this->selectAliases)) && strpos($colonne, '.') === false) {
+            if ($this->tableAlias !== null) {
                 $colonne = $this->tableAlias . '.' . $colonne;
             }
             else {
@@ -2383,7 +2659,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
             $model = $this->model;
 
             $this->sqlQuery .= ERTools::quoteIdentifiant($model::database()) . '.' . ERTools::quoteIdentifiant($model::table());
-            if ($this->tableAlias !== NULL) {
+            if ($this->tableAlias !== null) {
                 $this->sqlQuery .= ' ' . ERTools::quoteIdentifiant($this->tableAlias);
             }
         }
@@ -2502,7 +2778,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
      */
 
     private function buildLimit() {
-        if ($this->limit !== NULL) {
+        if ($this->limit !== null) {
             $this->sqlQuery .= ' LIMIT ' . $this->limit;
         }
         return $this;
@@ -2518,7 +2794,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
      */
 
     private function buildOffset() {
-        if ($this->offset !== NULL) {
+        if ($this->offset !== null) {
             $this->sqlQuery .= ' OFFSET ' . $this->offset;
         }
         return $this;
@@ -2563,7 +2839,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         }
         elseif (preg_match('/findBy([\w]*)/', $name, $outputArray)) {
             $string = Text::camelToUnderscore($outputArray[1]);
-            return $this->where($string, $arguments[0])->take();
+            return $this->where(strtoupper($string), $arguments[0])->take();
         }
         elseif (preg_match('/add([\w]*)/', $name, $outputArray) || preg_match('/remove([\w]*)/', $name, $outputArray)) {
             return $this->addRemoveRelation($name, $arguments, $outputArray);
@@ -2586,7 +2862,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
             $referer   = $modelName::find($this->belongsToDetails['referer']);
             return $referer->deleteHasMany(str_replace('Agendaweb\App\Models\\', '', get_class($this->model)) . 's');
         }
-        return FALSE;
+        return false;
     }
 
 
@@ -2608,10 +2884,14 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         }
         if (empty($this->orderBy)) {
             if ($this->first) {
-                $this->orderBy($model::getIdentifier());
+                foreach ($model::getIdentifier($model::READ_TO_ARRAY) as $value) {
+                    $this->orderBy($value);
+                }
             }
             elseif ($this->last) {
-                $this->orderByDesc($model::getIdentifier());
+                foreach ($model::getIdentifier($model::READ_TO_ARRAY) as $value) {
+                    $this->orderByDesc($value);
+                }
             }
         }
         $this->sqlQuery = $this->buildSelect();
@@ -2635,16 +2915,31 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         $listeObjects = [];
         $result       = ERTools::execute($this->sqlQuery, $this->bindParam);
 
+        if($this->index === false) {
+            $this->index = $model->getIdentifier($model::READ_TO_STRING);
+        }
+
+        $i = 0;
         while ($result->next()) {
+            if(isset($result->row()[$this->index])) {
+                $index = $result->row()[$this->index];
+            } else {
+                $index = $i;
+            }
+
+
             if ($this->lightMode == 0) {
-                $listeObjects[] = self::instantiate($result->row(), get_class($this->model), $this->model->getReadOnly());
+                $shape = $this->entity ? $this->entity : get_class($this->model);
+                $listeObjects[$index] = self::instantiate($result->row(), $shape, $this->model->getReadOnly(), $this->model->getPotentialRelations());
             }
             elseif ($this->lightMode == 2) {
-                $listeObjects[] = array_change_key_case($result->row());
+                $listeObjects[$index] = array_change_key_case($result->row());
             }
-            else {
-                $listeObjects[] = $result->get($model::getIdentifier());
+            elseif($this->lightMode == 1) {
+                $listeObjects[$index] = $result->get($model::getIdentifier($model::READ_TO_STRING));
             }
+
+            $i++;
         }
         return $listeObjects;
     }
@@ -2661,8 +2956,14 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
      * @return object
      */
 
-    private static function instantiate($record, $class, $readOnly) {
-        $object = new $class(TRUE);
+    private static function instantiate($record, $class, $readOnly, $potential_relations) {
+        $object = new $class(true);
+
+        if($potential_relations) {
+            foreach($potential_relations as $relation => $datas) {
+                $object->setPotentialRelation($relation, $datas);
+            }
+        }
 
         if ($readOnly) {
             $object->readOnly();
@@ -2671,7 +2972,6 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
         foreach ($record as $attribut => $value) {
             $object->setAttribute($attribut, $value);
         }
-
         $object->notNew();
         return $object;
     }
@@ -2686,7 +2986,7 @@ class ERQuery implements \IteratorAggregate, \ArrayAccess {
     private function runQuery() {
         if (!$this->queryExecuted) {
             $this->results       = $this->run();
-            $this->queryExecuted = TRUE;
+            $this->queryExecuted = true;
         }
     }
 

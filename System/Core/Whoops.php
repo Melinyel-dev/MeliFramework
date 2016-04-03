@@ -14,7 +14,7 @@ class Whoops {
 
     private $whoops;
     private $errorPage;
-    private $format = NULL;
+    private $format = null;
 
     /**
      * Constructeur

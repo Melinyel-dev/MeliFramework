@@ -14,12 +14,14 @@ use System\Core\Request;
 
 class Profiler {
 
-    private static $enabled       = FALSE;
+    private static $enabled       = false;
+    private static $disabled      = false;
     private static $marks         = [];
     private static $queries       = [];
     private static $queriesFetch  = [];
     private static $renderingTime = 0;
     private static $sysMarks      = [];
+    private static $cacheQueries  = [];
 
 
     /**
@@ -27,7 +29,7 @@ class Profiler {
      */
 
     public static function enable() {
-        self::$enabled = TRUE;
+        self::$enabled = true;
     }
 
 
@@ -44,6 +46,14 @@ class Profiler {
     }
 
 
+    /**
+     * Desactive le profiler
+     */
+    public static function disable() {
+        self::$disabled = true;
+    }
+
+
     // -------------------------------------------------------------------------
 
     /**
@@ -54,8 +64,10 @@ class Profiler {
      */
 
     public static function query($queryInfos) {
-        self::$queries[] = $queryInfos;
-        return count(self::$queries) - 1;
+        if(!self::$disabled) {
+            self::$queries[] = $queryInfos;
+            return count(self::$queries) - 1;
+        }
     }
 
 
@@ -69,11 +81,13 @@ class Profiler {
      */
 
     public static function queryFetch($queryInfos) {
-        if (!array_key_exists($queryInfos[0], self::$queriesFetch)) {
-            self::$queriesFetch[$queryInfos[0]] = 0;
-            self::$queriesFetch[$queryInfos[0]] += $queryInfos[1];
+        if(!self::$disabled) {
+            if (!array_key_exists($queryInfos[0], self::$queriesFetch)) {
+                self::$queriesFetch[$queryInfos[0]] = 0;
+                self::$queriesFetch[$queryInfos[0]] += $queryInfos[1];
+            }
+            return count(self::$queries) - 1;
         }
-        return count(self::$queries) - 1;
     }
 
 
@@ -86,7 +100,9 @@ class Profiler {
      */
 
     public static function mark($name) {
-        self::$marks[$name][] = microtime(TRUE) * 1000;
+        if(!self::$disabled) {
+            self::$marks[$name][] = microtime(true) * 1000;
+        }
     }
 
 
@@ -99,7 +115,9 @@ class Profiler {
      */
 
     public static function sys_mark($name) {
-        self::$sysMarks[$name][] = microtime(TRUE) * 1000;
+        if(!self::$disabled) {
+            self::$sysMarks[$name][] = microtime(true) * 1000;
+        }
     }
 
 
@@ -147,7 +165,7 @@ class Profiler {
      */
 
     public static function getSysMarksResults($totalTime) {
-        $return = NULL;
+        $return = null;
 
         foreach (self::$sysMarks as $mark => $times) {
             if (array_key_exists(0, $times) && array_key_exists(1, $times)) {
@@ -181,7 +199,7 @@ class Profiler {
      */
 
     public static function getMarksResults($totalTime){
-        $return = NULL;
+        $return = null;
 
         foreach (self::$marks as $mark => $times) {
             if(array_key_exists(0, $times) && array_key_exists(1, $times)) {
@@ -213,11 +231,11 @@ class Profiler {
      */
 
     public static function getQueriesResults(){
-        $return = NULL;
+        $return = null;
         $i = 0;
 
         foreach (self::$queries as $query) {
-            $strFetch = NULL;
+            $strFetch = null;
 
             if (array_key_exists($i, self::$queriesFetch)) {
                 $strFetch = '&nbsp;-&nbsp;Fetch(&nbsp;'.round(self::$queriesFetch[$i],4).'&nbsp;ms&nbsp;)';
@@ -279,7 +297,7 @@ class Profiler {
 
         foreach ($_SESSION as $key => $val) {
             if (is_array($val) OR is_object($val)) {
-                $val = print_r($val, TRUE);
+                $val = print_r($val, true);
             }
 
             $sessionOutput .= '<tr><td style="padding:5px;vertical-align:top;color:#900;background-color:#ddd;">' . $key . '&nbsp;&nbsp;</td><td style="padding:5px;color:#000;background-color:#ddd;">' . htmlspecialchars($val) . "</td></tr>\n";
@@ -321,7 +339,7 @@ class Profiler {
             $systemTime         = round($totalTime - $controllerTime, 4);
             $requestData        = count(Request::getParams()) ? Debug::simple(Request::getParams()) : 'No data';
 
-            $controlleurOutput  = Debug::simple($controller);
+            $controlleurOutput  = '';//Debug::simple($controller);
             $mysqlTime          = self::getMysqlTime();
             $fetchTime          = self::getFetchTime();
             $mysqlTotalTime     = round($mysqlTime + $fetchTime, 4);

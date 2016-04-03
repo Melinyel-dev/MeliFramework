@@ -27,7 +27,7 @@ class DateTimeFrench extends \DateTime {
         $english_months_abr = array('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec');
         $french_months_abr  = array('Janv.', 'Févr.', 'Mars', 'Avr.', 'Mai', 'Juin', 'Juil.', 'Août', 'Sept.', 'Oct.', 'Nov.', 'Déc.');
 
-        if (strpos($format, 'M') !== FALSE) {
+        if (strpos($format, 'M') !== false) {
             return str_replace($english_months_abr, $french_months_abr, str_replace($english_days_abr, $french_days_abr, str_replace($english_months, $french_months, str_replace($english_days, $french_days, parent::format($format)))));
         }
 

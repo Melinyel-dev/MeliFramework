@@ -30,7 +30,7 @@ class Notice {
      */
 
     public static function get() {
-        return array_key_exists('flash_notice_orm', $GLOBALS) ? $GLOBALS['flash_notice_orm'] : FALSE;
+        return array_key_exists('flash_notice_orm', $GLOBALS) ? $GLOBALS['flash_notice_orm'] : false;
     }
 }
 

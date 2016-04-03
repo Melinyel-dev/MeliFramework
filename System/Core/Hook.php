@@ -12,7 +12,7 @@ namespace System\Core;
 
 
 class Hook {
-    protected static $enable = FALSE;
+    protected static $enable = false;
     private static $hooks    = [];
 
 
@@ -21,7 +21,7 @@ class Hook {
      */
 
     public static function enable() {
-        self::$enable = TRUE;
+        self::$enable = true;
     }
 
 

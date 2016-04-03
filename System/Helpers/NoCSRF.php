@@ -11,7 +11,7 @@ namespace System\Helpers;
 
 class NoCSRF {
 
-    protected static $doOriginCheck = TRUE;
+    protected static $doOriginCheck = true;
 
     /**
      * Check CSRF tokens match between session and $origin.
@@ -19,12 +19,12 @@ class NoCSRF {
      *
      * @param String $key The session and $origin key where to find the token.
      * @param String $token The token sent by client
-     * @param Integer $timespan (Facultative) Makes the token expire after $timespan seconds. (NULL = never)
+     * @param Integer $timespan (Facultative) Makes the token expire after $timespan seconds. (null = never)
      * @param Boolean $multiple (Facultative) Makes the token reusable and not one-time. (Useful for ajax-heavy requests).
      *
-     * @return Boolean Returns FALSE if a CSRF attack is detected, TRUE otherwise.
+     * @return Boolean Returns false if a CSRF attack is detected, true otherwise.
      */
-    public static function check($key, $token, $timespan = 600, $multiple = TRUE) {
+    public static function check($key, $token, $timespan = 600, $multiple = true) {
         if (!Session::has('csrf_'.$key)) {
             throw new Exception('Missing CSRF session token.');
         }
@@ -52,7 +52,7 @@ class NoCSRF {
         }
 
         // Check for token expiration
-        if ($timespan != NULL && is_int($timespan)) {
+        if ($timespan != null && is_int($timespan)) {
             $rand_add     = substr(Hash::decode($hash), 0, 5);
             $rand_mult    = substr(Hash::decode($hash), 15, 1);
             $encoded_time = substr(Hash::decode($hash), 5, 10);
@@ -63,7 +63,7 @@ class NoCSRF {
             }
         }
 
-        return TRUE;
+        return true;
     }
 
 
@@ -74,7 +74,7 @@ class NoCSRF {
      */
 
     public static function disableOriginCheck(){
-        self::$doOriginCheck = FALSE;
+        self::$doOriginCheck = false;
     }
 
     // -------------------------------------------------------------------------

@@ -23,21 +23,35 @@ class ERDB {
      *
      * @var array
      */
-    private static $instance = [];
+    protected static $instance = [];
 
     /**
      * Mysqli connection
      *
      * @var \mysqli
      */
-    private $db;
+    protected $db;
+
+    /**
+     * Mysqli statement
+     *
+     * @var \mysqli_stmt
+     */
+    protected $stmt;
 
     /**
      * Last query
      *
      * @var string
      */
-    private $lastQuery = '';
+    protected $lastQuery = '';
+
+    /**
+     * Last bind params
+     *
+     * @var \Orb\EasyRecord\ERBindParam
+     */
+    protected $lastBind = null;
 
     // -------------------------------------------------------------------------
 
@@ -62,22 +76,32 @@ class ERDB {
      * @param string $dbname
      * @param int $port
      * @param string $socket
-     * @throws ERException
+     * @throws \Orb\EasyRecord\ERException
      * @return ERDB
      */
     public static function connect($key = 'default', $host = 'localhost', $user = 'root', $passwd = '', $dbname = '', $port = 3306, $socket = '') {
 
         // Close previous instance
-        if (($prev = self::getInstance($key)) !== FALSE) {
+        if (($prev = self::getInstance($key)) !== false) {
             $prev->close();
         }
 
+        // Activate exceptions
+        \mysqli_report(\MYSQLI_REPORT_STRICT);
+
         // Open a new mysqli connection
-        $db = new \mysqli($host, $user, $passwd, $dbname, $port, $socket);
+        try {
+            $db = \mysqli_init();
+            //$db->options(MYSQLI_OPT_CONNECT_TIMEOUT, 2); NOTE: Problème requête 'longue'
+            $db->connect($host, $user, $passwd, $dbname, $port, $socket);
+        }
+        catch (\mysqli_sql_exception $ex) {
+            throw new ERException($ex->getMessage(), $ex->getCode());
+        }
 
         // Connection error
         if ($db->connect_errno) {
-            throw new ERException('Connexion impossible', ERROR_LEVEL_MYSQL);
+            throw new ERException($db->connect_error, ERROR_LEVEL_MYSQL);
         }
 
         // Charset
@@ -95,52 +119,92 @@ class ERDB {
      * Returns an instance
      *
      * @param string $key
-     * @return ERDB
+     * @return \Orb\EasyRecord\ERDB
      */
     public static function getInstance($key = 'default') {
         if (isset(self::$instance[$key])) {
             return self::$instance[$key];
         }
 
-        return FALSE;
+        return false;
     }
 
     // -------------------------------------------------------------------------
 
     /**
-     * Close a connection
+     * Close a connexion
+     *
+     * @return \Orb\EasyRecord\ERDB
+     * @throws \Orb\EasyRecord\ERException
      */
     public function close() {
-        $this->db->close();
+        try {
+            $this->db->close();
+        }
+        catch (\mysqli_sql_exception $ex) {
+            throw new ERException($ex->getMessage(), $ex->getCode());
+        }
+
+        return $this;
     }
 
     // -------------------------------------------------------------------------
 
     /**
      * Start a new transaction
+     *
+     * @return \Orb\EasyRecord\ERDB
+     * @throws \Orb\EasyRecord\ERException
      */
     public function transactionStart() {
-        $this->db->autocommit(FALSE);
+        try {
+            $this->db->autocommit(false);
+        }
+        catch (\mysqli_sql_exception $ex) {
+            throw new ERException($ex->getMessage(), $ex->getCode());
+        }
+
+        return $this;
     }
 
     // -------------------------------------------------------------------------
 
     /**
      * Commit the transaction
+     *
+     * @return \Orb\EasyRecord\ERDB
+     * @throws \Orb\EasyRecord\ERException
      */
     public function commit() {
-        $this->db->commit();
-        $this->db->autocommit(TRUE);
+        try {
+            $this->db->commit();
+            $this->db->autocommit(true);
+        }
+        catch (\mysqli_sql_exception $ex) {
+            throw new ERException($ex->getMessage(), $ex->getCode());
+        }
+
+        return $this;
     }
 
     // -------------------------------------------------------------------------
 
     /**
      * Rollback the transaction
+     *
+     * @return \Orb\EasyRecord\ERDB
+     * @throws \Orb\EasyRecord\ERException
      */
     public function rollback() {
-        $this->db->rollback();
-        $this->db->autocommit(TRUE);
+        try {
+            $this->db->rollback();
+            $this->db->autocommit(true);
+        }
+        catch (\mysqli_sql_exception $ex) {
+            throw new ERException($ex->getMessage(), $ex->getCode());
+        }
+
+        return $this;
     }
 
     // -------------------------------------------------------------------------
@@ -149,55 +213,106 @@ class ERDB {
      * Execute a query and returns the results of the query
      * This method supports simple query or prepared query
      *
-     * @param type $query
+     * @param string $query
      * @param \Orb\EasyRecord\ERBindParam $param
      * @return \Orb\EasyRecord\ERResult
-     * @throws \mysqli_sql_exception
+     * @throws \Orb\EasyRecord\ERException
      */
-    public function query($query, ERBindParam $param = NULL) {
+    public function query($query, ERBindParam $param = null) {
+        $this->prepare($query);
+        return $this->execute($param);
+    }
 
-        $startTimeQuery = microtime(TRUE) * 1000;
+    // -------------------------------------------------------------------------
 
-        $result = FALSE;
-        $errno  = FALSE;
+    /**
+     * Prepare a query
+     *
+     * @param string $query
+     * @return \Orb\EasyRecord\ERDB
+     * @throws ERException
+     */
+    public function prepare($query) {
+        try {
+            // Save the last query
+            $this->lastQuery = $query;
 
-        $this->lastQuery = [$query, $param];
+            // Prepare the query
+            $this->stmt = $this->db->prepare($query);
 
-        $stmt = $this->db->prepare($query);
-
-        if($this->db->errno) {
-            throw new \mysqli_sql_exception("MySQL error (#{$this->db->errno}) : {$this->db->error})\n Request: {$this->lastQuery()}", ERROR_LEVEL_MYSQL);
+            // Error on prepare
+            if ($this->stmt == false) {
+                throw new ERException("MySQL error (#{$this->db->errno}) : {$this->db->error}\nRequest:\n{$this->lastQuery()}", ERROR_LEVEL_MYSQL);
+            }
+        }
+        catch (\mysqli_sql_exception $ex) {
+            throw new ERException($ex->getMessage(), $ex->getCode());
         }
 
-        if ($stmt && $param !== NULL && $param->hasValues()) {
-            call_user_func_array(array($stmt, 'bind_param'), $param->get());
+        return $this;
+    }
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Execute a query
+     *
+     * @param \Orb\EasyRecord\ERBindParam $param
+     * @return \Orb\EasyRecord\ERResult
+     * @throws ERException
+     */
+    public function execute(ERBindParam $param = null, $stmtClose = true) {
+        $result = false;
+
+        $startTimeQuery = microtime(true) * 1000;
+
+        try {
+            // Save the last bind
+            $this->lastBind = $param;
+
+            // Bind values
+            if ($param !== null && $param->hasValues()) {
+                $bind = $this->stmt->bind_param(...$param->get());
+
+                if ($bind == false) {
+                    throw new ERException("MySQL error (#{$this->stmt->errno}) : {$this->stmt->error}\nRequest:\n{$this->lastQuery()}", ERROR_LEVEL_MYSQL);
+                }
+            }
+
+            // Execute query
+            $exec = $this->stmt->execute();
+
+            // Error on execute
+            if ($exec == false) {
+                throw new ERException("MySQL error (#{$this->stmt->errno}) : {$this->stmt->error}\nRequest:\n{$this->lastQuery()}", ERROR_LEVEL_MYSQL);
+            }
+
+            // Get results
+            $mysqliResult = $this->stmt->get_result();
+
+            // Set of results
+            if ($mysqliResult instanceof \mysqli_result) {
+                $result = new ERResult($mysqliResult);
+            }
+            // Rows affected
+            else {
+                $result = $this->stmt->affected_rows;
+            }
+
+            // Close statement
+            if ($stmtClose) {
+                $this->stmt->close();
+            }
+
+
+            $timeQuery = (microtime(true) * 1000) - $startTimeQuery;
+
+            Profiler::query([$this->lastQuery(), $timeQuery]);
+
         }
-
-        if ($stmt->execute()) {
-            $errno = $stmt->errno;
+        catch (\mysqli_sql_exception $ex) {
+            throw new ERException($ex->getMessage(), $ex->getCode());
         }
-
-        // SQL Error
-        if ($errno > 0) {
-            $stmt->close();
-            throw new \mysqli_sql_exception("MySQL error (#{$errno})\n Request: {$this->lastQuery()}", ERROR_LEVEL_MYSQL);
-        }
-
-        $mysqliResult = $stmt->get_result();
-
-        // Set of results
-        if ($mysqliResult instanceof \mysqli_result) {
-            $result = new ERResult($mysqliResult);
-        }
-        else {
-            $result = TRUE;
-        }
-
-        $stmt->close();
-
-        $timeQuery = (microtime(TRUE) * 1000) - $startTimeQuery;
-
-        Profiler::query([$this->lastQuery(), $timeQuery]);
 
         return $result;
     }
@@ -207,10 +322,10 @@ class ERDB {
     /**
      * Returns last insert ID
      *
-     * @return int|FALSE
+     * @return int|false
      */
     public function lastId() {
-        return $this->db->insert_id ? $this->db->insert_id : FALSE;
+        return $this->db->insert_id ? $this->db->insert_id : false;
     }
 
     // -------------------------------------------------------------------------
@@ -222,23 +337,13 @@ class ERDB {
      */
     public function lastQuery() {
 
-        // The last query is already transformed into a string
-        if (!is_array($this->lastQuery)) {
-            return $this->lastQuery;
-        }
-
-        // Get prepared query and ERBindParam object
-        list($query, $bind) = $this->lastQuery;
-
-        // Any value to be bind
-        if ($bind === NULL || !$bind->hasValues()) {
-            $this->lastQuery = $query;
-
+        // Any binded values
+        if ($this->lastBind === null || !$this->lastBind->hasValues()) {
             return $this->lastQuery;
         }
 
         // Get types and values
-        $binds   = $bind->get();
+        $binds   = $this->lastBind->get();
         $types   = array_shift($binds);
         $replace = [];
         foreach ($binds as $key => $value) {
@@ -251,6 +356,10 @@ class ERDB {
         // Prepare callback for the replacement
         $callback = function ($match) use (&$replace) {
             $bind = array_shift($replace);
+
+            if($bind['value'] === null) {
+                return 'null';
+            }
 
             switch ($bind['type']) {
                 case 'i':
@@ -273,7 +382,8 @@ class ERDB {
         };
 
         // Replace all : '?' by binded params
-        $this->lastQuery = preg_replace_callback('/\?/', $callback, $query);
+        $this->lastQuery = preg_replace_callback('/\?/', $callback, $this->lastQuery);
+        $this->lastBind  = null;
 
         return $this->lastQuery;
     }

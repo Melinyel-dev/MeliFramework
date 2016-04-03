@@ -18,7 +18,7 @@ class Ip
     public static function toNum($stringIp)
     {
         if (!self::isValidIp($stringIp)) {
-            return FALSE;
+            return false;
         }
 
         list($o1, $o2, $o3, $o4) = explode('.', $stringIp);
@@ -41,7 +41,7 @@ class Ip
         $o4 = (int) (($numIp           ) % 256);
 
         $stringIp = implode('.', [$o1, $o2, $o3, $o4]);
-        return (self::isValidIp($stringIp)) ? $stringIp : FALSE;
+        return (self::isValidIp($stringIp)) ? $stringIp : false;
     }
 
     // -------------------------------------------------------------------------

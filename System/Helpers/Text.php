@@ -61,8 +61,8 @@ class Text {
         '#Œ#'                             => 'OE',
         '#ƒ#'                             => 'f'
     ];
-    private static $search             = NULL;
-    private static $replace            = NULL;
+    private static $search             = null;
+    private static $replace            = null;
 
     // -------------------------------------------------------------------------
 
@@ -73,7 +73,7 @@ class Text {
      * @return string
      */
     public static function convertAccents($str) {
-        if (self::$search === NULL || self::$replace === NULL) {
+        if (self::$search === null || self::$replace === null) {
             self::$search  = array_keys(self::$foreign_characters);
             self::$replace = array_values(self::$foreign_characters);
         }
@@ -91,11 +91,11 @@ class Text {
      */
     public static function split($char, $str) {
 
-        if (strpos('#!^$()[]{}|?+*.\\', $char) !== FALSE) {
+        if (strpos('#!^$()[]{}|?+*.\\', $char) !== false) {
             $char = '\\' . $char;
         }
 
-        return preg_split("#\s*{$char}\s*#", $str, NULL, PREG_SPLIT_NO_EMPTY);
+        return preg_split("#\s*{$char}\s*#", $str, null, PREG_SPLIT_NO_EMPTY);
     }
 
     // -------------------------------------------------------------------------
@@ -120,7 +120,7 @@ class Text {
         // by PHP tags, which we will remove later
         $str = '<?php ' . $str . ' ?>'; // <?
         // All the magic happens here, baby!
-        $str = highlight_string($str, TRUE);
+        $str = highlight_string($str, true);
 
         // Remove our artificially added PHP, and the syntax highlighting that came with it
         $str = preg_replace('/<span style="color: #([A-Z0-9]+)">&lt;\?php(&nbsp;| )/i', '<span style="color: #$1">', $str);
@@ -165,7 +165,7 @@ class Text {
      * @param boolean $lowercase True to returns a lowercase string
      * @return string Returns a string formatted for urls
      */
-    public static function urlTitle($str, $lowercase = TRUE) {
+    public static function urlTitle($str, $lowercase = true) {
 
         if ($str == '') {
             return '';
@@ -211,7 +211,7 @@ class Text {
      * @param bool $firstCharCaps camelCase or CamelCase
      * @return string The converted string
      */
-    public static function underscoreToCamel($str, $firstCharCaps = FALSE) {
+    public static function underscoreToCamel($str, $firstCharCaps = false) {
 
         if ($str == '') {
             return '';
@@ -246,7 +246,7 @@ class Text {
 
     /**
      * SQL Like operator in PHP.
-     * Returns TRUE if match else FALSE.
+     * Returns true if match else false.
      *
      * @param   string $pattern
      * @param   string $subject

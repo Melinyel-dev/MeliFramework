@@ -33,9 +33,9 @@ class Auth {
             $compte->lastConnect = ['NOW()'];
             $compte->save();
             Session::put('current_user', $compte->id);
-            return TRUE;
+            return true;
         }
-        return FALSE;
+        return false;
     }
 
 
@@ -50,9 +50,9 @@ class Auth {
         if (self::check()) {
             $compte = $GLOBALS['conf']['auth']['class']::where($GLOBALS['conf']['auth']['login'], self::user()->$GLOBALS['conf']['auth']['login'])->first();
             Session::put('current_user', $compte->id);
-            return TRUE;
+            return true;
         }
-        return FALSE;
+        return false;
     }
 
 
@@ -71,9 +71,9 @@ class Auth {
     // -------------------------------------------------------------------------
 
     /**
-     * Retour l'utilisateur actuellement connecté ou FALSE
+     * Retour l'utilisateur actuellement connecté ou false
      *
-     * @return FALSE | object
+     * @return false | object
      */
     public static function user() {
         if (self::check()) {
@@ -82,7 +82,7 @@ class Auth {
             }
             return $GLOBALS['current_user'];
         } else {
-            return FALSE;
+            return false;
         }
     }
 
@@ -110,9 +110,9 @@ class Auth {
         $compte = $GLOBALS['conf']['auth']['class']::where($GLOBALS['conf']['auth']['login'], $login)->first();
 
         if (Hash::check($password, $compte->mdp_hash)) {
-            return TRUE;
+            return true;
         }
-        return FALSE;
+        return false;
     }
 
 }

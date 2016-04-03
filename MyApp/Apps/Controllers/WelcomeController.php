@@ -7,7 +7,7 @@ use System\Helpers\Profiler;
 class WelcomeController extends ApplicationController {
 
     public function getIndex() {
-        //Profiler::enable();
+        Profiler::enable();
     }
 }
 

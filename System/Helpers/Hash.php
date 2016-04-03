@@ -95,9 +95,9 @@ class Hash{
         $cost = 9;
         do {
             $cost++;
-            $start = microtime(TRUE);
+            $start = microtime(true);
             password_hash("Secret_Password", PASSWORD_BCRYPT, ['cost' => $cost, 'salt' => call_user_func('System\Helpers\Hash::' . self::$_hash_method)]);
-            $end = microtime(TRUE);
+            $end = microtime(true);
         } while (($end - $start) < $time_target);
 
         return $cost;
@@ -126,12 +126,12 @@ class Hash{
      *
      * @param string string
      * @param string key
-     * @return FALSE | string
+     * @return false | string
      */
 
     public static function decode($string, $key = '') {
         if (preg_match('/[^a-zA-Z0-9\/\+=]/', $string)) {
-            return FALSE;
+            return false;
         }
 
         return self::mcrypt_decode(base64_decode($string), self::get_key($key));
@@ -235,7 +235,7 @@ class Hash{
      *
      * @param mixed data
      * @param string key
-     * @return FALSE | string
+     * @return false | string
      */
 
     private static function mcrypt_decode($data, $key) {
@@ -243,7 +243,7 @@ class Hash{
         $init_size = mcrypt_get_iv_size(self::_get_cipher(), self::_get_mode());
 
         if ($init_size > strlen($data)) {
-            return FALSE;
+            return false;
         }
 
         $init_vect = substr($data, 0, $init_size);

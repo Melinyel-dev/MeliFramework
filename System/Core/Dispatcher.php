@@ -35,7 +35,7 @@ class Dispatcher {
             Hook::load('pre_controller');
 
             // Chargement du contrôlleur
-            $startController = microtime(TRUE) * 1000;
+            $startController = microtime(true) * 1000;
             $controller = $this->loadController();
 
             // Vérification que la méthode appelée est défini dans les routes et existe
@@ -44,7 +44,7 @@ class Dispatcher {
             }
 
             if (extension_loaded ('newrelic')) {
-                newrelic_name_transaction($GLOBALS['conf']['app_name'] . ' ' . implode('/', Request::getNamespaces()) . '/' . Request::getAs() . '::' . Request::getAction() . ($GLOBALS['conf']['environment'] == 'prod' ? '' : ' - '.$GLOBALS['conf']['environment']));
+                newrelic_name_transaction(implode('/', Request::getNamespaces()) . '/' . Request::getAs() . '::' . Request::getAction() . ($GLOBALS['conf']['environment'] == 'prod' ? '' : ' - '.$GLOBALS['conf']['environment']));
             }
 
             Hook::load('pre_ability');
@@ -59,8 +59,8 @@ class Dispatcher {
 
             // Appel de la méthode du contrôlleur
             $ajaxReturn = call_user_func_array(array($controller, Request::getAction()), Request::getParams());
-            $debugController = ob_get_clean();
-            $startRenderingView = microtime(TRUE) * 1000;
+            $controllerOutput = ob_get_clean();
+            $startRenderingView = microtime(true) * 1000;
 
             if (Request::getMethod() != 'AJAX') {
                 // Rendu de la vue si pas déjà fait dans le contrôlleur
@@ -80,8 +80,8 @@ class Dispatcher {
                 echo json_encode($ajaxReturn);
             }
 
-            $endRenderingView = microtime(TRUE) * 1000;
-            $endController = microtime(TRUE) * 1000;
+            $endRenderingView = microtime(true) * 1000;
+            $endController = microtime(true) * 1000;
 
             Hook::load('post_controller');
         } else {
@@ -90,7 +90,7 @@ class Dispatcher {
         }
 
         Hook::load('post_system');
-        $endExecution = microtime(TRUE) * 1000;
+        $endExecution = microtime(true) * 1000;
         Profiler::rendering(round($endRenderingView - $startRenderingView, 4));
         Profiler::displayProfiler(round($endExecution - $startExecution, 4), round($endController - $startController, 4));
     }
@@ -144,7 +144,7 @@ class Dispatcher {
                 return $name::getInstance();
             }
         }
-        return FALSE;
+        return false;
     }
 
 
@@ -158,8 +158,8 @@ class Dispatcher {
     **/
 
     private function loadMainController($namespaces, $namespace) {
-        $namespaceString = NULL;
-        $controllerString = NULL;
+        $namespaceString = null;
+        $controllerString = null;
 
         if (count($namespaces)) {
             $namespaceString = DS . implode(DS, $namespaces);
@@ -202,11 +202,11 @@ class Dispatcher {
                 $controller->format = Request::getExt();
 
                 if (in_array(Request::getAction() , array_diff(get_class_methods($controller), get_class_methods('\System\Core\Controller')))) {
-                    return TRUE;
+                    return true;
                 }
             }
         }
-        return FALSE;
+        return false;
     }
 }
 

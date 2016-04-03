@@ -24,24 +24,24 @@ use System\Orm\ERDB;
 
 class Controller {
 
-    const AJAX_ErrorCode        = '##ERROR##';
-    const AJAX_SuccessCode      = '##SUCCESS##';
-    const AJAX_EndSessionCode   = '##CLOSE##';
+    const AJAX_ErrorCode        = 500;
+    const AJAX_SuccessCode      = 200;
+    const AJAX_RedirectCode     = 301;
 
-    const AJAX_Maintenance      = '##DOWN##';
-    const AJAX_ConnexionRequest = '##AUTH##';
+    const AJAX_Maintenance      = 503;
+    const AJAX_ConnexionRequest = 403;
 
     private static $instance;                       // Instance du singleton
 
-    private $rendered               = FALSE;        // Flag de l'état du rendu
+    private $rendered               = false;        // Flag de l'état du rendu
     private $renderedView;                          // Résultat du rendu
     private $cancan;                                // Instance de CanCan, gestion des droits d'accès
     private $view;                                  // Nom de la vue courante
     private $format;                                // Format de la vue courante
 
     protected $outputMode           = 'html';       // Mode d'émission du résultat de la vue (html, text, json, stream, xml)
-    protected $externalLibsHandeler = FALSE;        // Flag d'activation du gestionaire des ressources externes
-    protected $UADispatcherEnable   = FALSE;        // Flag d'activation du dispatcher par User-Agent
+    protected $externalLibsHandeler = false;        // Flag d'activation du gestionaire des ressources externes
+    protected $UADispatcherEnable   = false;        // Flag d'activation du dispatcher par User-Agent
     protected $userAgent;
 
     public $layout;                                 // Layout courant
@@ -49,7 +49,7 @@ class Controller {
     public $Libs;                                   // Chargement du CSS/JS
     public $whoops;                                 // Objet Whoops
     public $template;                               // Template par défaut
-    public $debugMode               = FALSE;        // Permet d'afficher les echos dans le controleur
+    public $debugMode               = false;        // Permet d'afficher les echos dans le controleur
 
     public $readableMethods         = [];           // Configuration de CanCan : méthodes ayant les droits READ
     public $createableMethods       = [];           // Configuration de CanCan : méthodes ayant les droits CREATE
@@ -67,7 +67,7 @@ class Controller {
      * @return object singleton
      */
     public static function getInstance() {
-        if (NULL === self::$instance) {
+        if (null === self::$instance) {
             self::$instance = new static();
         }
         return self::$instance;
@@ -87,20 +87,20 @@ class Controller {
 
         if (Request::getMethod() == 'AJAX') {
             if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
-                $token  = array_key_exists('HTTP_X_CSRF_TOKEN', $_SERVER) ? $_SERVER['HTTP_X_CSRF_TOKEN'] : FALSE;
+                $token  = array_key_exists('HTTP_X_CSRF_TOKEN', $_SERVER) ? $_SERVER['HTTP_X_CSRF_TOKEN'] : false;
                 $routes = Request::getRoutes();
                 $as     = Request::getAs();
                 $action = Request::getAction();
 
                 if (count($routes[$as]['AJAX_OPTIONS'][$action])) {
-                    if ($token === FALSE) {
+                    if ($token === false) {
                         $this->e500('HTTP_X_CSRF_TOKEN Missing');
                     }
 
                     if (array_key_exists('csrf_key', $routes[$as]['AJAX_OPTIONS'][$action])) {
                         $keyToken = $routes[$as]['AJAX_OPTIONS'][$action]['csrf_key'];
                         $expire   = array_key_exists('csrf_expire', $routes[$as]['AJAX_OPTIONS'][$action]) ? $routes[$as]['AJAX_OPTIONS'][$action]['csrf_expire'] : 600;
-                        $multiple = array_key_exists('csrf_multiple', $routes[$as]['AJAX_OPTIONS'][$action]) ? $routes[$as]['AJAX_OPTIONS'][$action]['csrf_multiple'] : TRUE;
+                        $multiple = array_key_exists('csrf_multiple', $routes[$as]['AJAX_OPTIONS'][$action]) ? $routes[$as]['AJAX_OPTIONS'][$action]['csrf_multiple'] : true;
 
                         NoCSRF::check($keyToken, $token, $expire, $multiple);
                     }
@@ -113,7 +113,7 @@ class Controller {
 
         if ($GLOBALS['conf']['user_agent_dispatcher']) {
             Profiler::sys_mark('UserAgent Detect');
-            $this->UADispatcherEnable = TRUE;
+            $this->UADispatcherEnable = true;
             $this->userAgent = UADispatcher::getInstance();
             Profiler::sys_mark('UserAgent Detect');
         }
@@ -140,7 +140,7 @@ class Controller {
      * @param string format
      */
 
-    public function render($view, $format = NULL){ 
+    public function render($view, $format = null){ 
         $this->view = $view;
         $this->format = $format;
     }
@@ -152,7 +152,7 @@ class Controller {
      * Muttateur de debugMode
      */
 
-    public function setDebug($bool = TRUE) {
+    public function setDebug($bool = true) {
         $this->debugMode = $bool;
     }
 
@@ -165,9 +165,21 @@ class Controller {
      */
 
     public function isViewSet() {
-        return $this->view !== NULL;
+        return $this->view !== null;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Défini la vue à rendre
+     *
+     * @return boolean
+     */
+
+    public function setView($view) {
+        $this->view = $view;
+    }
 
     // -------------------------------------------------------------------------
 
@@ -178,7 +190,7 @@ class Controller {
     **/
     public function renderDisplay() {
         if ($this->rendered) {
-            return FALSE;
+            return false;
         }
 
         $view   = $this->view;
@@ -211,13 +223,13 @@ class Controller {
         }
         $ext = '.' . $format;
 
-        if (mb_strpos($view,'/') !== FALSE) {
+        if (mb_strpos($view,'/') !== false) {
             $file   = str_replace('/', DS, VIEWS . DS . $view . $ext);
             $folder = substr($file, 0, strrpos($file, DS));
             $view   = explode('/', $view);
             $view   = array_pop($view) . $ext;
         } else {
-            $namespace = NULL;
+            $namespace = null;
             if (!empty(Request::getNamespaces())) {
                 $namespace = DS . implode('/', Request::getNamespaces());
             }
@@ -233,7 +245,7 @@ class Controller {
                 $this->renderNone($file);
             }
         } elseif($this->UADispatcherEnable) {
-            $this->UADispatcherEnable = FALSE;
+            $this->UADispatcherEnable = false;
             $this->renderDisplay();
         } else {
             $this->e500('Le fichier ' . $view . ' n\'existe pas.');
@@ -260,6 +272,14 @@ class Controller {
             header('Content-Type: application/xml; charset=utf-8');
         }
 
+        if ($this->UADispatcherEnable) {
+            header('Vary: User-Agent');
+        }
+
+        if ($GLOBALS['conf']['environment'] != 'prod') {
+            header('X-Robots-Tag: noindex,nofollow');
+        }
+
         echo $this->renderedView;
     }
 
@@ -271,7 +291,7 @@ class Controller {
     *
     * @param string message
     **/
-    public function e404($message = NULL){
+    public function e404($message = null){
         header("HTTP/1.0 404 Not Found");
 
         if ($GLOBALS['conf']['environment'] == "prod") {
@@ -290,11 +310,30 @@ class Controller {
     // -------------------------------------------------------------------------
 
     /**
+    * Permet d'afficher une vue
+    *
+    * @param file vue
+    **/
+    public function load($file) {
+        $pathfile = VIEWS . DS . $file . '.' . $GLOBALS['conf']['default_format'];
+
+        if(is_file($pathfile)) {
+            extract($this->data);
+            ob_start();
+            require $pathfile;
+            $this->renderedView .= ob_get_clean();
+        }
+    }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
     * Permet de gérer les erreurs 500
     *
     * @param string message
     **/
-    public function e500($message = NULL){
+    public function e500($message = null){
         header("HTTP/1.0 500 Internal Server Error");
 
         if ($GLOBALS['conf']['environment'] == "prod") {
@@ -374,8 +413,8 @@ class Controller {
             $this->data['Libs'] = $this->buildLibs();
         }
 
-        $this->renderedView = $this->controllerRenderExecute($ControllerRenderExecuteFile, $this->data, $this->layout, $tabRegions);
-        $this->rendered = TRUE;
+        $this->renderedView .= $this->controllerRenderExecute($ControllerRenderExecuteFile, $this->data, $this->layout, $tabRegions);
+        $this->rendered = true;
     }
 
 
@@ -388,8 +427,8 @@ class Controller {
      */
 
     protected function renderNone($ControllerRenderExecuteFile) {
-        $this->renderedView = $this->controllerRenderNone($ControllerRenderExecuteFile, $this->data);
-        $this->rendered = TRUE;
+        $this->renderedView .= $this->controllerRenderNone($ControllerRenderExecuteFile, $this->data);
+        $this->rendered = true;
     }
 
 
@@ -448,7 +487,7 @@ class Controller {
 
         $this->Libs['JS_Vars']['AJAX_ErrorCode']        = self::AJAX_ErrorCode;
         $this->Libs['JS_Vars']['AJAX_SuccessCode']      = self::AJAX_SuccessCode;
-        $this->Libs['JS_Vars']['AJAX_EndSessionCode']   = self::AJAX_EndSessionCode;
+        $this->Libs['JS_Vars']['AJAX_RedirectCode']     = self::AJAX_RedirectCode;
 
         $this->Libs['JS_Vars']['AJAX_Maintenance']      = self::AJAX_Maintenance;
         $this->Libs['JS_Vars']['AJAX_ConnexionRequest'] = self::AJAX_ConnexionRequest;

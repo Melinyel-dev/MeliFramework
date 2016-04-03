@@ -84,7 +84,7 @@ class Encrypt {
      * @param string $key
      * @return string
      */
-    public function encode($string, $key = NULL) {
+    public function encode($string, $key = null) {
         $key = $this->_getKey($key);
         $enc = $this->_mcrypt_encode($string, $key);
 
@@ -98,13 +98,13 @@ class Encrypt {
      *
      * @param string $string
      * @param string $key
-     * @return string|FALSE
+     * @return string|false
      */
     public function decode($string, $key = '') {
         $key = $this->_getKey($key);
 
         if (preg_match('/[^a-zA-Z0-9\/\+=]/', $string)) {
-            return FALSE;
+            return false;
         }
 
         $dec = base64_decode($string);
@@ -124,9 +124,9 @@ class Encrypt {
      * @return string
      * @throws \RuntimeException
      */
-    private function _getKey($key = NULL) {
+    private function _getKey($key = null) {
 
-        if ($key == NULL) {
+        if ($key == null) {
 
             if (!isset($this->key)) {
                 throw new \RuntimeException('An encryption key is required');
@@ -229,7 +229,7 @@ class Encrypt {
         $initSize = mcrypt_get_iv_size($cipher, $mode);
 
         if ($initSize > strlen($data)) {
-            return FALSE;
+            return false;
         }
 
         $initVect = substr($data, 0, $initSize);

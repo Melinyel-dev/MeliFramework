@@ -50,7 +50,7 @@ class Template {
      * Retourne le résultat d'une région d'un template
      *
      * @param string region
-     * @return NULL | array | string
+     * @return null | array | string
      */
 
     public function render($region) {
@@ -59,7 +59,7 @@ class Template {
         } elseif (array_key_exists($region, $this->strings)) {
             return $this->strings[$region];
         }
-        return NULL;
+        return null;
     }
 
 
@@ -76,18 +76,18 @@ class Template {
         $templatePath = $this->views[$region]['path'];
         extract($this->views[$region]['vars']);
 
-        if (strpos($templatePath, '.') === FALSE) {
+        if (strpos($templatePath, '.') === false) {
             $Template_ext = '.' . $GLOBALS['conf']['default_format'];
         } else {
-            $Template_ext = NULL;
+            $Template_ext = null;
         }
 
-        if (strpos($templatePath,'/') !== FALSE) {
+        if (strpos($templatePath,'/') !== false) {
             $templatePath = str_replace('/', DS, $templatePath);
             $TemplateFile = VIEWS . DS . $templatePath . $Template_ext;
         } else {
             $Template_ctrl = Controller::getInstance();
-            $Template_namespace = NULL;
+            $Template_namespace = null;
 
             if (!empty($Template_ctrl->request->namespaces)) {
                 $Template_namespace = DS . implode(DS, $Template_ctrl->request->namespaces);

@@ -14,10 +14,10 @@ use Orb\Security\Encrypt;
  *
  * Table structure :
  * CREATE TABLE `SESSIONS` (
- * `CLEF_SESSION` bigint(20) NOT NULL AUTO_INCREMENT,
- * `DATA` longblob NOT NULL,
- * `LAST_ACTIVITY` int(10) unsigned NOT NULL,
- * `SEARCH` varchar(32) DEFAULT NULL,
+ * `CLEF_SESSION` bigint(20) NOT null AUTO_INCREMENT,
+ * `DATA` longblob NOT null,
+ * `LAST_ACTIVITY` int(10) unsigned NOT null,
+ * `SEARCH` varchar(32) DEFAULT null,
  * PRIMARY KEY (`CLEF_SESSION`),
  * KEY `LAST_ACTIVITY_INDEX` (`LAST_ACTIVITY`),
  * KEY `SEARCH_INDEX` (`SEARCH`)
@@ -25,35 +25,35 @@ use Orb\Security\Encrypt;
  *
  * @author sugatasei
  */
-class ERSession {
+class ERSession extends \Orb\Helpers\Data {
 
     /**
      * Current instance of this class
      *
      * @var \Orb\EasyRecord\ERSession
      */
-    private static $instance = NULL;
+    protected static $instance = null;
 
     /**
      * Current instance of Database
      *
      * @var \Orb\EasyRecord\ERDB
      */
-    private $db = NULL;
+    protected $db = null;
 
     /**
      * Current timestamp
      *
      * @var int
      */
-    private $time = NULL;
+    protected $time = null;
 
     /**
      * Config
      *
      * @var array
      */
-    private $config = [
+    protected $config = [
         'cookie_name'    => 'session',
         'table_name'     => 'sessions',
         'encryption_key' => 'sessions',
@@ -67,28 +67,21 @@ class ERSession {
      *
      * @var int
      */
-    private $id = NULL;
+    protected $id = null;
 
     /**
      * Is substitute user
      *
      * @var int
      */
-    private $isSU = FALSE;
-
-    /**
-     * Data
-     *
-     * @var array
-     */
-    private $data = [];
+    protected $isSU = false;
 
     // -------------------------------------------------------------------------
 
     /**
      * Class constructor
      */
-    private function __construct(ERDB $db) {
+    protected function __construct(ERDB $db) {
         $this->db = $db;
     }
 
@@ -99,8 +92,8 @@ class ERSession {
      *
      * @return \Orb\EasyRecord\ERSession
      */
-    public static function getInstance(ERDB $db = NULL) {
-        if (self::$instance === NULL) {
+    public static function getInstance(ERDB $db = null) {
+        if (self::$instance === null) {
             if ($db) {
                 self::$instance = new static($db);
             }
@@ -130,6 +123,23 @@ class ERSession {
     // -------------------------------------------------------------------------
 
     /**
+     * Get a configuration
+     * 
+     * @param string $name
+     * @param mixed $default
+     * @return mixed
+     */
+    public function getConfig($name, $default = null) {
+        if (isset($this->config[$name])) {
+            return $this->config[$name];
+        }
+
+        return $default;
+    }
+
+    // -------------------------------------------------------------------------
+
+    /**
      * Start a session
      *
      * @return \Orb\EasyRecord\ERSession
@@ -137,7 +147,7 @@ class ERSession {
     public function start() {
 
         // Session already started
-        if ($this->id !== NULL) {
+        if ($this->id !== null) {
             return;
         }
 
@@ -146,7 +156,7 @@ class ERSession {
 
         // Activate the subsitute user mode
         if ($id) {
-            $this->isSU = TRUE;
+            $this->isSU = true;
         }
         // Get the session from the default user cookie
         else {
@@ -160,7 +170,7 @@ class ERSession {
         }
 
         // The session is not found
-        if ($this->id === NULL) {
+        if ($this->id === null) {
             $this->_create();
         }
         // Refresh Cookie
@@ -178,13 +188,22 @@ class ERSession {
      *
      * @return \Orb\EasyRecord\ERSession
      */
-    public function close($save = TRUE) {
-        if ($save) {
-            $this->_save();
+    public function close() {
+
+        // Session not started
+        if ($this->id === null) {
+            return $this;
         }
-        else {
-            $this->_refresh();
-        }
+
+        $table = $this->config['table_name'];
+        $query = "UPDATE {$table} SET LAST_ACTIVITY = ?, DATA = ? WHERE CLEF_SESSION = ?";
+
+        $bind = new ERBindParam();
+        $bind->add('i', $this->_getTime());
+        $bind->add('s', call_user_func($this->config['serialize'], $this->data));
+        $bind->add('i', $this->id);
+
+        $this->db->query($query, $bind);
 
         return $this;
     }
@@ -194,22 +213,23 @@ class ERSession {
     /**
      * Connect to another session based on search field
      *
-     * @param string $search
+     * @param int $site
+     * @param int $user
      * @return \Orb\EasyRecord\ERSession
      */
-    public function su($search) {
+    public function su($site, $user) {
 
         // Activate the subsitute user mode
-        $this->isSU = TRUE;
+        $this->isSU = true;
 
         // Reset variables
         $this->_init();
 
         // Get Session from DB
-        $this->_loadSearch($search);
+        $this->_loadSearch($site, $user);
 
         // The session is not found
-        if ($this->id === NULL) {
+        if ($this->id === null) {
             $this->_create();
         }
         else {
@@ -229,12 +249,17 @@ class ERSession {
      */
     public function destroy() {
 
+        // Session not started
+        if ($this->id === null) {
+            return $this;
+        }
+
         // Deconnect the substitute user
         if ($this->isSU) {
 
             // Desactivate the subsitute user mode
-            $this->isSU = FALSE;
-            Cookie::delete($this->_getCookie('_SU'));
+            $this->isSU = false;
+            Cookie::getInstance()->delete($this->_getCookie('_SU'));
 
             // Reset variables
             $this->_init();
@@ -246,29 +271,13 @@ class ERSession {
             }
 
             // The session is not found
-            if ($this->id === NULL) {
+            if ($this->id === null) {
                 $this->_create();
             }
         }
-        // Destroy the session
+        // Destroy data
         else {
-
-            // Remove data in DB
-            if ($this->id) {
-                $table = $this->config['table_name'];
-                $query = "DELETE FROM {$table} WHERE CLEF_SESSION = ?";
-
-                $bind = new ERBindParam();
-                $bind->add('i', $this->id);
-
-                $this->db->query($query, $bind);
-            }
-
-            // Reset variables
-            $this->_init();
-
-            // Create a new session
-            $this->_create();
+            $this->clear();
         }
 
         return $this;
@@ -282,6 +291,11 @@ class ERSession {
      * @return \Orb\EasyRecord\ERSession
      */
     public function clean() {
+
+        // Session started
+        if ($this->id !== null) {
+            return $this;
+        }
 
         $table = $this->config['table_name'];
         $query = "DELETE FROM {$table} WHERE LAST_ACTIVITY < ?";
@@ -307,80 +321,8 @@ class ERSession {
      *
      * @return int
      */
-    public function getId($default = NULL) {
-        return $this->id === NULL ? $default : $this->id;
-    }
-
-    // -------------------------------------------------------------------------
-
-    /**
-     * Check if a data exists
-     *
-     * @param string $name
-     * @return boolean
-     */
-    public function has($name) {
-        return isset($this->data[$name]);
-    }
-
-    // -------------------------------------------------------------------------
-
-    /**
-     * Returns data
-     *
-     * @param string $name
-     * @param string $default
-     * @return mixed
-     */
-    public function & get($name, $default = NULL) {
-        if (isset($this->data[$name])) {
-            return $this->data[$name];
-        }
-
-        return $default;
-    }
-
-    // -------------------------------------------------------------------------
-
-    /**
-     * Returns all data
-     *
-     * @return array
-     */
-    public function all() {
-        return $this->data;
-    }
-
-    // -------------------------------------------------------------------------
-
-    /**
-     * Set data
-     *
-     * @param string $name
-     * @param string $value
-     * @return \Orb\EasyRecord\ERSession
-     */
-    public function set($name, $value) {
-        $this->data[$name] = $value;
-
-        return $this;
-    }
-
-    // -------------------------------------------------------------------------
-
-    /**
-     * Delete a data
-     *
-     * @param string $name
-     * @return \Orb\EasyRecord\ERSession
-     */
-    public function delete($name) {
-
-        if (isset($this->data[$name])) {
-            unset($this->data[$name]);
-        }
-
-        return $this;
+    public function getId($default = null) {
+        return $this->id === null ? $default : $this->id;
     }
 
     // -------------------------------------------------------------------------
@@ -409,13 +351,109 @@ class ERSession {
     // -------------------------------------------------------------------------
 
     /**
+     * Set user for search
+     * 
+     * @param int $site
+     * @param int $id
+     * @return \Orb\EasyRecord\ERSession
+     */
+    public function setUser($site, $id) {
+        if ($this->id) {
+            $table = $this->config['table_name'];
+            $query = "UPDATE {$table} SET SITEID = ?, CLEFCOMPTE = ?  WHERE CLEF_SESSION = ?";
+
+            $bind = new ERBindParam();
+            $bind->add('i', (int) $site);
+            $bind->add('i', (int) $id);
+            $bind->add('i', $this->id);
+
+            $this->db->query($query, $bind);
+        }
+
+        return $this;
+    }
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Check if a flash data is set
+     * 
+     * @param string $name
+     * @return boolean
+     */
+    public function hasFlash($name) {
+        return $this->has(':old:' . $name);
+    }
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Get a flash data set previously
+     * 
+     * @param string $name
+     * @param mixed $default
+     * @return mixed
+     */
+    public function getFlash($name, $default = null) {
+        return $this->get(':old:' . $name, $default);
+    }
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Set a flash data
+     * 
+     * @param string $name
+     * @param mixed $value
+     * @return \Orb\EasyRecord\ERSession
+     */
+    public function setFlash($name, $value) {
+        $this->set(':new:' . $name, $value);
+
+        return $this;
+    }
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Delete a flash data
+     * 
+     * @param string $name
+     * @return \Orb\EasyRecord\ERSession
+     */
+    public function deleteFlash($name) {
+        $this->deleteFlash(':old:' . $name);
+        $this->deleteFlash(':new:' . $name);
+
+        return $this;
+    }
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Keep a flash data
+     * 
+     * @param string $name
+     * @return \Orb\EasyRecord\ERSession
+     */
+    public function keepFlash($name) {
+        $value = $this->get(':old:' . $name);
+        if ($value !== null) {
+            $this->set(':new:' . $name, $value);
+        }
+        return $this;
+    }
+
+    // -------------------------------------------------------------------------
+
+    /**
      * Returns current session timestamp
      *
      * @return int
      */
-    private function _getTime() {
+    protected function _getTime() {
 
-        if ($this->time === NULL) {
+        if ($this->time === null) {
             $this->time = time();
         }
         return $this->time;
@@ -426,8 +464,8 @@ class ERSession {
     /**
      * Init variables
      */
-    private function _init() {
-        $this->id   = NULL;
+    protected function _init() {
+        $this->id   = null;
         $this->data = [];
     }
 
@@ -436,7 +474,7 @@ class ERSession {
     /**
      * Create a new session entry
      */
-    private function _create() {
+    protected function _create() {
 
         // Create new session in DB
         $table = $this->config['table_name'];
@@ -460,7 +498,7 @@ class ERSession {
      * Load session from ID
      * @param int $id
      */
-    private function _loadId($id) {
+    protected function _loadId($id) {
         $table = $this->config['table_name'];
         $query = "SELECT * from {$table} WHERE CLEF_SESSION = ? AND LAST_ACTIVITY < ?";
 
@@ -478,13 +516,14 @@ class ERSession {
      *
      * @param string $search
      */
-    private function _loadSearch($search) {
+    protected function _loadSearch($site, $user) {
         $table = $this->config['table_name'];
-        $query = "SELECT * from {$table} WHERE SEARCH = ? AND LAST_ACTIVITY < ? "
+        $query = "SELECT * from {$table} WHERE SITEID = ? AND CLEFCOMPTE = ? AND LAST_ACTIVITY < ? "
                 . "ORDER BY LAST_ACTIVITY DESC LIMIT 1";
 
         $bind = new ERBindParam();
-        $bind->add('s', $search);
+        $bind->add('i', (int) $site);
+        $bind->add('i', (int) $user);
         $bind->add('i', $this->_getTime() + $this->config['expiration']);
 
         $this->_loadResult($this->db->query($query, $bind));
@@ -497,52 +536,17 @@ class ERSession {
      *
      * @param \Orb\EasyRecord\ERResult $result
      */
-    private function _loadResult($result) {
+    protected function _loadResult($result) {
         if ($result->count()) {
-            $result->next();
-            $this->id = $result->get('CLEF_SESSION');
+            $row      = $result->next();
+            $this->id = $row['CLEF_SESSION'];
 
-            if (($data = $result->get('DATA'))) {
-                $this->data = call_user_func($this->config['unserialize'], $data);
+            if (($data = $row['DATA'])) {
+                $this->data = (array) call_user_func($this->config['unserialize'], $data);
             }
         }
-    }
 
-    // -------------------------------------------------------------------------
-
-    /**
-     * Refresh the session activity
-     */
-    public function _refresh() {
-        if ($this->id) {
-            $table = $this->config['table_name'];
-            $query = "UPDATE {$table} SET LAST_ACTIVITY = ? WHERE CLEF_SESSION = ?";
-
-            $bind = new ERBindParam();
-            $bind->add('i', $this->_getTime());
-            $bind->add('i', $this->id);
-
-            $this->db->query($query, $bind);
-        }
-    }
-
-    // -------------------------------------------------------------------------
-
-    /**
-     * Save the data and refresh the session activity
-     */
-    public function _save() {
-        if ($this->id) {
-            $table = $this->config['table_name'];
-            $query = "UPDATE {$table} SET LAST_ACTIVITY = ?, DATA = ? WHERE CLEF_SESSION = ?";
-
-            $bind = new ERBindParam();
-            $bind->add('i', $this->_getTime());
-            $bind->add('s', call_user_func($this->config['serialize'], $this->data));
-            $bind->add('i', $this->id);
-
-            $this->db->query($query, $bind);
-        }
+        $this->_sweepFlash();
     }
 
     // -------------------------------------------------------------------------
@@ -552,16 +556,16 @@ class ERSession {
      *
      * @return boolean
      */
-    private function _getCryptedCookie($suffix = '') {
+    protected function _getCryptedCookie($suffix = '') {
 
-        $id = Cookie::get($this->_getCookie($suffix), FALSE);
+        $id = Cookie::getInstance()->get($this->_getCookie($suffix), false);
 
         if ($id) {
             $encrypt = new Encrypt();
             return $encrypt->decode($id, $this->config['encryption_key']);
         }
 
-        return FALSE;
+        return false;
     }
 
     // -------------------------------------------------------------------------
@@ -569,12 +573,12 @@ class ERSession {
     /**
      * Set crypted Session Id in the cookie
      */
-    private function _setCryptedCookie($suffix = '') {
+    protected function _setCryptedCookie($suffix = '') {
         $encrypt     = new Encrypt();
         $encryptedId = $encrypt->encode($this->id, $this->config['encryption_key']);
 
         $expire = $this->_getTime() + $this->config['expiration'];
-        Cookie::set($this->_getCookie($suffix), $encryptedId, $expire);
+        Cookie::getInstance()->set($this->_getCookie($suffix), $encryptedId, $expire);
     }
 
     // -------------------------------------------------------------------------
@@ -585,8 +589,31 @@ class ERSession {
      * @param string $suffix
      * @return string
      */
-    private function _getCookie($suffix) {
+    protected function _getCookie($suffix) {
         return $this->config['cookie_name'] . $suffix;
+    }
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Removes all flashdata marked as 'old'
+     * Mark all 'new' flashdata as 'old'
+     *
+     * @access	private
+     * @return	void
+     */
+    function _sweepFlash() {
+        $userdata = $this->all();
+        foreach ($userdata as $key => $value) {
+
+            if (strpos($key, ':old:') !== false) {
+                $this->delete($key);
+            }
+            elseif (strpos($key, ':new:') !== false) {
+                $this->set(str_replace(':new:', ':old:', $key), $value);
+                $this->delete($key);
+            }
+        }
     }
 
     // -------------------------------------------------------------------------

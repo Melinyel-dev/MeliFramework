@@ -1,5 +1,4 @@
 <?php
-
 namespace System\Orm;
 
 
@@ -10,6 +9,7 @@ namespace System\Orm;
  */
 
 class ERTools {
+
 
     /**
      * Protège l'identifiant d'un champ
@@ -38,7 +38,6 @@ class ERTools {
         if ($part === '*') {
             return $part;
         }
-
         $quoteCharacter = '`';
         return $quoteCharacter . str_replace($quoteCharacter, $quoteCharacter . $quoteCharacter, $part) . $quoteCharacter;
     }

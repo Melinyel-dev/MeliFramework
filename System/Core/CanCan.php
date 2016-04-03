@@ -99,7 +99,7 @@ class CanCan {
         $object = $namespace . $controllerName;
 
         // Détermine quel niveau de droit vérifier
-        $methodType = NULL;
+        $methodType = null;
         if (in_array($method, $this->readableMethods)) {
             $methodType = 'read';
         } elseif (in_array($method, $this->createableMethods)) {

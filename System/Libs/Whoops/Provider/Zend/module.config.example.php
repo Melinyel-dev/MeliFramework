@@ -9,12 +9,12 @@
 return array(
     'view_manager' => array(
         'editor' => 'sublime',
-        'display_not_found_reason' => TRUE,
-        'display_exceptions' => TRUE,
+        'display_not_found_reason' => true,
+        'display_exceptions' => true,
         'json_exceptions' => array(
-            'display' => TRUE,
-            'ajax_only' => TRUE,
-            'show_trace' => TRUE
+            'display' => true,
+            'ajax_only' => true,
+            'show_trace' => true
         )
     ),
 );

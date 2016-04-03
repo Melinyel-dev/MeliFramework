@@ -13,26 +13,34 @@ use System\Helpers\Text;
  * @author anaeria
  */
 
+
 class EasyRecord {
+
+    // Constantes
+    const READ_TO_ARRAY = 0;
+    const READ_TO_STRING = 1;
+    const READ_TO_LOWER = 2;
 
     // Core
     protected $data               = [];
     protected $dirty              = [];
     protected $expr               = [];
-    public $errors                = NULL;
-    protected $newRecord          = TRUE;
-    protected $readOnly           = FALSE;
+    public $errors                = null;
+    protected $newRecord          = true;
+    protected $readOnly           = false;
     protected static $database;
     protected static $table;
     protected static $identifiant;
     protected static $mapping;
     protected static $mappingFile = '.';
     protected static $mappingConfig;
-    private $namespace            = NULL;
-    private $classname            = NULL;
+    protected static $relations_foreign_keys;
+    private $namespace            = null;
+    private $classname            = null;
+    private $potential_relations  = [];
 
     // Relationships
-    protected $relations                  = NULL;
+    protected $relations                  = null;
     protected static $hasMany             = [];
     protected static $hasOne              = [];
     protected static $belongsTo           = [];
@@ -71,9 +79,9 @@ class EasyRecord {
      * @param boolean fromQuery
      */
 
-    public function __construct($fromQuery = FALSE) {
-        $mapping      = static::mappingInit();
-        if (!$fromQuery) {
+    public function __construct($fromQuery = false) {
+        $mapping = static::mappingInit();
+        if (!$fromQuery)  {
             $this->init();
         }
         if (!static::getConfig('scopes')) {
@@ -81,7 +89,6 @@ class EasyRecord {
         }
         $this->errors = new ERErreurManager;
     }
-
 
     // -------------------------------------------------------------------------
 
@@ -92,7 +99,7 @@ class EasyRecord {
      * @return array | string
      */
 
-    public static function &getConfig($key = NULL) {
+    public static function &getConfig($key = null) {
         static $_config;
 
         $class = get_called_class();
@@ -100,7 +107,8 @@ class EasyRecord {
         if (isset($_config) && isset($_config[$class])) {
             if ($key) {
                 return $_config[$class][$key];
-            } else {
+            }
+            else {
                 return $_config[$class];
             }
         }
@@ -109,8 +117,8 @@ class EasyRecord {
             'database'            => static::$database,
             'table'               => static::$table,
             'identifiant'         => static::$identifiant,
-            'mapping'             => static::$mapping,
             'mappingConfig'       => static::$mappingConfig,
+            'mapping'             => static::$mapping,
             'hasMany'             => static::$hasMany,
             'hasOne'              => static::$hasOne,
             'belongsTo'           => static::$belongsTo,
@@ -137,7 +145,8 @@ class EasyRecord {
         $_config[$class] = & $config;
         if ($key) {
             return $_config[$class][$key];
-        } else {
+        }
+        else {
             return $_config[$class];
         }
     }
@@ -178,17 +187,48 @@ class EasyRecord {
         return $this->namespace;
     }
 
-
     // -------------------------------------------------------------------------
 
     /**
      * Retourne le nom de la clé primaire
      *
+     * @param int mode
      * @return string
      */
 
-    public static function getIdentifier() {
-        return static::identifiant();
+    public static function getIdentifier($mode = 2) {
+        if($mode == self::READ_TO_ARRAY) {
+            $keys = [];
+            foreach (static::identifiant() as $id) {
+                $keys[$id] = $id;
+            }
+            return $keys;
+        } else {
+            $id = implode('_', static::identifiant());
+        }
+
+        return $id;
+    }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Retourne l'instance à une clé primaire valide
+     *
+     * @return boolean
+     */
+
+    public function hasIdentifier() {
+        $valid = true;
+
+        foreach ($this->getIdentifierValue(self::READ_TO_ARRAY) as $pk) {
+            if(!$pk) {
+                $valid = false;
+            }
+        }
+
+        return $valid;
     }
 
 
@@ -197,15 +237,205 @@ class EasyRecord {
     /**
      * Retourne la valeur de la clé primaire
      *
+     * @param int
      * @return mixed
      */
 
-    public function getIdentifierValue() {
-        $id = self::getIdentifier();
-        if (array_key_exists($id, $this->data)) {
-            return $this->data[$id];
+    public function getIdentifierValue($mode = 2) {
+        $ids = self::getIdentifier(self::READ_TO_ARRAY);
+
+        $values = [];
+        foreach ($ids as $key => $id) {
+            $values[$id] = isset($this->data[$id]) ? $this->data[$id] : (isset($this->dirty[$id]) ? $this->dirty[$id] : false);
         }
-        return isset($this->dirty[$id]) ? $this->dirty[$id] : FALSE;
+
+        if($mode == self::READ_TO_ARRAY) {
+            return $values;
+        } else {
+            return implode('_', $values);
+        }
+    }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Retourne la nom d'une clé étrangère d'une relation
+     *
+     * @param string
+     * @param string
+     * @return mixed
+     */
+
+    public function getForeignKey($relation, $primary_key) {
+        if (!isset(self::$relations_foreign_keys[$this->getRelationName($relation)])) {
+            $this->getRelationKeys($relation);
+        }
+
+        if (!isset(self::$relations_foreign_keys[$this->getRelationName($relation)][$primary_key])) {
+            throw new ERException('EasyRecord::getForeignKey unable to access primary key (' . $this->getClassname() . '::' . $primary_key . ') for relation (' . $relation . ')', 1);
+        }
+
+        return self::$relations_foreign_keys[$this->getRelationName($relation)][$primary_key];
+    }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Retourne les clés d'un relation
+     *
+     * @param string
+     * @return array
+     */
+
+    public function getRelationKeys($relation) {
+        if (!isset(self::$relations_foreign_keys[$this->getRelationName($relation)])) {
+            self::$relations_foreign_keys[$this->getRelationName($relation)] = [];
+
+            $operation = $this->getRelationData($relation);
+
+            $relationData = self::{$operation}();
+            if(isset($relationData[ucfirst($relation)])) {
+                $relationData = $relationData[ucfirst($relation)];
+            } else {
+                $relationData = [];
+            }
+
+            $className = isset($relationData['class_name']) ? $relationData['class_name'] : $this->getNamespace() . ucfirst($relation);
+
+            if(($operation == 'hasMany' || $operation == 'hasAndBelongsToMany') && $className[strlen($className)-1] == 's') {
+                $className = substr($className,0,strlen($className)-1);
+            }
+
+            if(isset($relationData['inverse_of'])) {
+                $dist = new $className;
+                self::$relations_foreign_keys[$this->getRelationName($relation)] = array_flip($dist->getRelationKeys($relationData['inverse_of']));
+                return self::$relations_foreign_keys[$this->getRelationName($relation)];
+            }
+
+            if($operation == 'hasMany' || $operation == 'hasOne' || $operation == 'hasAndBelongsToMany') {
+                $source = $this->getNamespace() . $this->getClassname();
+                $dest = $className;
+            } elseif($operation == 'belongsTo') {
+                $source = $className;
+                $dest = $this->getNamespace() . $this->getClassname();
+            }
+
+            if(isset($relationData['foreign_key'])) {
+                foreach ($source::getIdentifier(self::READ_TO_ARRAY) as $primary_key) {
+                    if($operation == 'belongsTo') {
+                        if(isset($relationData['foreign_key'][$primary_key])) {
+                            self::$relations_foreign_keys[$this->getRelationName($relation)][$relationData['foreign_key'][$primary_key]] = $primary_key;
+                        } else {
+                            self::$relations_foreign_keys[$this->getRelationName($relation)][$relationData['foreign_key']] = $primary_key;
+                        }
+                    } else {
+                        if(isset($relationData['foreign_key'][$primary_key])) {
+                            self::$relations_foreign_keys[$this->getRelationName($relation)][$primary_key] = $relationData['foreign_key'][$primary_key];
+                        } else {
+                            self::$relations_foreign_keys[$this->getRelationName($relation)][$primary_key] = $relationData['foreign_key'];
+                        }
+                    }
+                }
+            } else {
+                self::$relations_foreign_keys[$this->getRelationName($relation)] = array_combine(array_values($source::getIdentifier($source::READ_TO_ARRAY)), array_values($source::getIdentifier($dest::READ_TO_ARRAY)));
+            }
+        }
+
+        return self::$relations_foreign_keys[$this->getRelationName($relation)];
+    }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Retourne le type d'une relation
+     *
+     * @param string
+     * @return string
+     */
+
+    public function getRelationData($relation) {
+        $relation = ucfirst($relation);
+        $rel = false;
+
+        if (isset(self::belongsTo()[$relation]) || in_array($relation, self::belongsTo())) {
+            $rel = 'belongsTo';
+        }
+
+        elseif (isset(self::hasMany()[$relation]) || in_array($relation, self::hasMany())) {
+            $rel = 'hasMany';
+        }
+
+        elseif (isset(self::hasOne()[$relation]) || in_array($relation, self::hasOne())) {
+            $rel = 'hasOne';
+        }
+
+        elseif (isset(self::hasAndBelongsToMany()[$relation]) || in_array($relation, self::hasAndBelongsToMany())) {
+            $rel = 'hasAndBelongsToMany';
+        }
+
+        if($rel) {
+            return $rel;
+        }
+
+        throw new ERException('EasyRecord::getRelationData unable to access relation (' . $relation . ')', 1);
+    }
+
+
+    public function getRelationClassName($relation) {
+
+        $className = '';
+        $infosArray = false;
+
+        switch($this->getRelationData($relation)) {
+            case 'belongsTo':
+                if (array_key_exists($relation, self::belongsTo())) {
+                    $infosArray = self::belongsTo()[$relation];
+                }
+                break;
+            case 'hasOne':
+                if (array_key_exists($relation, self::hasOne())) {
+                    $infosArray = self::hasOne()[$relation];
+                }
+                break;
+            case 'hasMany':
+                if (array_key_exists($relation, self::hasMany())) {
+                    $infosArray = self::hasMany()[$relation];
+                }
+                break;
+            case 'hasAndBelongsToMany':
+                if (array_key_exists($relation, self::hasAndBelongsToMany())) {
+                    $infosArray = self::hasAndBelongsToMany()[$relation];
+                }
+                break;
+            default:
+                break;
+        }
+
+        if($infosArray && array_key_exists('class_name', $infosArray)) {
+            $className = $this->getNamespace() . $infosArray['class_name'];
+        } else {
+            $className = $this->getNamespace() . $relation;
+        }
+
+        return $className;
+    }
+
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Retourne le nom d'une relation
+     *
+     * @param string
+     * @return string
+     */
+
+    public function getRelationName($relation) {
+        return $this->getNamespace() . $this->getClassname() . '_' . $relation;
     }
 
 
@@ -245,6 +475,7 @@ class EasyRecord {
 
     public function setData($data) {
         $this->data = $data;
+        return true;
     }
 
 
@@ -429,9 +660,6 @@ class EasyRecord {
      */
 
     public static function mappingConfig() {
-        if (!static::getConfig('mappingConfig')) {
-            static::mappingInit();
-        }
         return static::getConfig('mappingConfig');
     }
 
@@ -452,7 +680,7 @@ class EasyRecord {
     // -------------------------------------------------------------------------
 
     /**
-     * REcupére les données du modèle en tableau
+     * Recupére les données du modèle en tableau
      *
      * @return array
      */
@@ -496,6 +724,7 @@ class EasyRecord {
     }
 
 
+
     // -------------------------------------------------------------------------
 
     /**
@@ -511,9 +740,10 @@ class EasyRecord {
             return array_key_exists($outputArray[1], $this->dirty);
         }
         elseif (preg_match('/([\w]*)Was/', $name, $outputArray)) {
-            if (array_key_exists($outputArray[1], $this->dirty))
-                    return array_key_exists($outputArray[1], $this->data) ? $this->data[$outputArray[1]] : FALSE;
-            return FALSE;
+            if (array_key_exists($outputArray[1], $this->dirty)) {
+                return array_key_exists($outputArray[1], $this->data) ? $this->data[$outputArray[1]] : false;
+            }
+            return false;
         } else {
             return call_user_func_array([$this->newQuery(), $name], $arguments);
         }
@@ -536,7 +766,21 @@ class EasyRecord {
         }
 
         if (array_key_exists($key, $tmpData)) {
+            if(isset(static::mapping()[$key]) && static::mapping()[$key]['type'] == 'sjson') {
+                $tmpData[$key] = json_decode($tmpData[$key], true);
+            }
+            if ($this->hasGetMutator($key)) {
+                $method = 'get' . Text::underscoreToCamel($key) . 'Attribute';
+                return $this->{$method}($value);
+            }
             return $tmpData[$key];
+
+        } elseif (array_key_exists($key, $this->potential_relations)) {
+            $className = $this->getRelationClassName($key);
+
+            $object = $this->potential_relations[$key]->instanciateAs($className);
+
+            return $object;
         }
         return $this->relations()->getRelations($key, $this);
     }
@@ -553,8 +797,9 @@ class EasyRecord {
      */
 
     public function __set($key, $value) {
-        if ($key !== NULL) {
+        if ($key !== null) {
             $string = ucfirst($key);
+
             if (in_array($string, static::getConfig('belongsTo')) || array_key_exists($string, static::getConfig('belongsTo'))) {
                 return ERRelations::setBelongsTo($string, $value, $this);
             }
@@ -565,10 +810,14 @@ class EasyRecord {
 
                 if ($this->hasSetMutator($key)) {
                     $method = 'set' . Text::underscoreToCamel($key) . 'Attribute';
-                    $this->setProperty($key, $this->{$method}($value), ($value === NULL));
-                    return $this->{$method}($value);
+                    $this->setProperty($key, $this->{$method}($value), ($value === null));
+                    return $this->$key;
                 }
-                $this->setProperty($key, $value, ($value === NULL));
+
+                if(static::mapping()[$key]['type'] == 'sjson') {
+                    $value = json_encode($value);
+                }
+                $this->setProperty($key, $value, ($value === null));
             }
         }
     }
@@ -579,6 +828,7 @@ class EasyRecord {
     /**
      * Gère la duplication du modèle
      */
+
 
     public function __clone() {
         $this->errors = clone $this->errors;
@@ -599,9 +849,9 @@ class EasyRecord {
 
     public function __isset($name) {
         if (array_key_exists($name, $this->dirty) || array_key_exists($name, $this->data)) {
-            return TRUE;
+            return true;
         }
-        return FALSE;
+        return false;
     }
 
 
@@ -614,7 +864,7 @@ class EasyRecord {
      */
 
     public function __toString() {
-        return $this->getIdentifierValue() !== FALSE ? strval($this->getIdentifierValue()) : '';
+        return $this->getIdentifierValue(self::READ_TO_STRING) !== false ? strval($this->getIdentifierValue(self::READ_TO_STRING)) : '';
     }
 
 
@@ -627,20 +877,53 @@ class EasyRecord {
 
 
     /**
-     * Test si le modèle à changer par rapport à la BDD
+     * Donne une valeur à une attribut
      *
-     * @return boolean
+     * @param string key
+     * @param mixed value
      */
 
-    public function changed() {
-        return count($this->dirty) ? TRUE : FALSE;
+    public function setAttribute($key, $value) {
+
+        if(strpos($key, '_') === 0) {
+            $parts = explode('_', $key);
+            array_shift($parts);
+            $finalkey = array_pop($parts);
+
+            $relation = false;
+
+            foreach ($parts as $key => $rel) {
+                if(!$relation) {
+                    $relation = $this->getPotentialRelation($rel);
+                } else {
+                    $relation = $relation->getPotentialRelation($rel);
+                }
+            }
+
+            $relation->setAttribute($finalkey, $value);
+        } else {
+            $this->data[$key] = $value;
+        }
     }
 
 
     // -------------------------------------------------------------------------
 
     /**
-     * Retourne les changement par rapport à la BSS
+     * Test si le modèle à changer par rapport à la BDD
+     *
+     * @return boolean
+     */
+
+    public function changed() {
+        return count($this->dirty) ? true : false;
+    }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Retourne les changement par rapport à la BDD
      *
      * @return array
      */
@@ -648,7 +931,7 @@ class EasyRecord {
     public function changes() {
         $ary = [];
         foreach ($this->dirty as $key => $value) {
-            $ary[$key] = [array_key_exists($key, $this->data) ? $this->data[$key] : FALSE, $value];
+            $ary[$key] = [array_key_exists($key, $this->data) ? $this->data[$key] : false, $value];
         }
         return $ary;
     }
@@ -665,7 +948,7 @@ class EasyRecord {
     public function changedAttributes() {
         $ary = [];
         foreach ($this->dirty as $key => $value) {
-            $ary[$key] = [array_key_exists($key, $this->data) ? $this->data[$key] : FALSE];
+            $ary[$key] = [array_key_exists($key, $this->data) ? $this->data[$key] : false];
         }
         return $ary;
     }
@@ -677,19 +960,24 @@ class EasyRecord {
      * Efface un propriété du modèle
      *
      * @param string field
-     * @return FALSE | mixed
+     * @return false | mixed
      */
 
     public function unsetProp($field) {
-        $return = FALSE;
-        if (array_key_exists($field, $this->dirty)) unset($this->dirty[$field]);
-        if (array_key_exists($field, $this->expr)) unset($this->expr[$field]);
+        $return = false;
+        if (array_key_exists($field, $this->dirty)) {
+            unset($this->dirty[$field]);
+        }
+        if (array_key_exists($field, $this->expr)) {
+            unset($this->expr[$field]);
+        }
         if (array_key_exists($field, $this->data)) {
             $return = $this->data[$field];
             unset($this->data[$field]);
         }
         return $return;
     }
+
 
 
     // -------------------------------------------------------------------------
@@ -704,9 +992,9 @@ class EasyRecord {
     public function revert($field) {
         if (array_key_exists($field, $this->dirty)) {
             unset($this->dirty[$field]);
-            return TRUE;
+            return true;
         }
-        return FALSE;
+        return false;
     }
 
 
@@ -722,7 +1010,7 @@ class EasyRecord {
         foreach ($this->dirty as $key => $value) {
             unset($this->dirty[$key]);
         }
-        return TRUE;
+        return true;
     }
 
 
@@ -735,7 +1023,7 @@ class EasyRecord {
      */
 
     public function valid() {
-        return count($this->errors) ? FALSE : TRUE;
+        return count($this->errors) ? false : true;
     }
 
 
@@ -746,7 +1034,7 @@ class EasyRecord {
      */
 
     protected function resetCache() {
-        ERCache::getInstance()->nsDelete('EasyRecordCache', get_class($this) . '_' . $this->getIdentifierValue() . $this::cacheActivation() . $this::cacheTime());
+        ERCache::getInstance()->nsDelete('EasyRecordCache', get_class($this) . '_' . $this->getIdentifierValue(self::READ_TO_STRING) . self::cacheActivation() . self::cacheTime());
     }
 
 
@@ -765,7 +1053,7 @@ class EasyRecord {
      */
 
     public function notNew() {
-        $this->newRecord = FALSE;
+        $this->newRecord = false;
         return $this;
     }
 
@@ -798,7 +1086,7 @@ class EasyRecord {
      */
 
     public function setReadOnly() {
-        $this->readOnly = TRUE;
+        $this->readOnly = true;
         return $this;
     }
 
@@ -839,7 +1127,6 @@ class EasyRecord {
     }
 
 
-
     ############################################################################
     #
     #  Gestion des relations
@@ -854,10 +1141,80 @@ class EasyRecord {
      */
 
     public function flush() {
-        $this->relations = NULL;
+        $this->relations = null;
         return $this;
     }
 
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Initialise une relation potentielle
+     *
+     * @param string
+     */
+
+    public function preparePotentialRelation($name) {
+        $this->potential_relations[$name] = new ERPotentialRelations();
+    }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Définie une relation potentielle
+     *
+     * @param string
+     * @param object
+     */
+
+    public function setPotentialRelation($name, $datas) {
+        $this->potential_relations[$name] = $datas;
+    }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Détruit une relation potentielle
+     *
+     * @param string
+     */
+
+    public function deletePotentialRelation($name) {
+        if(isset($this->potential_relations[$name])) {
+            unset($this->potential_relations[$name]);
+        }
+    }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Retourne l'ensemble des relations potentielles
+     */
+
+    public function getPotentialRelations() {
+        return $this->potential_relations;
+    }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Retourne une relation potentielle
+     *
+     * @param string
+     * @return object
+     */
+
+    public function getPotentialRelation($name) {
+        if(isset($this->potential_relations[$name])) {
+            return $this->potential_relations[$name];
+        } else {
+            throw new ERException('Potential relation ' . $name .' not found in model ' . $this->getClassname());
+        }
+    }
 
 
     ############################################################################
@@ -867,6 +1224,19 @@ class EasyRecord {
     ############################################################################
 
 
+
+    /**
+     * Initialise une nouvelle instance de requête
+     */
+
+    public static function query() {
+        $class = get_called_class();
+        return new ERQuery(new $class);
+    }
+
+
+    // -------------------------------------------------------------------------
+
     /**
      * Initialise une nouvelle instance du modèle avec des données
      *
@@ -875,14 +1245,22 @@ class EasyRecord {
      * @return object
      */
 
-    public static function build($arguments = [], $from = NULL) {
+    public static function build($arguments = [], $from = null) {
         $object = new static;
         if ($from) {
-            $object->{$from['cle_etrangere']} = $from['referer'];
+            if(is_array($from['cle_etrangere'])) {
+                foreach ($from['cle_etrangere'] as $key => $value) {
+                    $object->{$value} = $from['referer'][$key];
+                }
+            } else {
+                $object->{$from['cle_etrangere']} = $from['referer'];
+            }
         }
+
         foreach ($arguments as $key => $value) {
             $object->$key = $value;
         }
+
         return $object;
     }
 
@@ -897,18 +1275,20 @@ class EasyRecord {
      * @return object
      */
 
-    public static function create(array $params = [], $bypassAttrAccessible = FALSE) {
+    public static function create(array $params = [], $bypassAttrAccessible = false) {
         $nomClasse            = get_called_class();
         $nouvelObjet          = new $nomClasse();
         $massAssignmentErrors = [];
 
         foreach ($params as $key => $value) {
-            if ($bypassAttrAccessible || count($nomClasse::getConfig('attrAccessible')) == 0 || in_array($key, $nomClasse::getConfig('attrAccessible'))){
+            if ($bypassAttrAccessible || count($nomClasse::getConfig('attrAccessible')) == 0 || in_array($key, $nomClasse::getConfig('attrAccessible'))) {
                 $nouvelObjet->$key      = $value;
-            } else {
+            }
+            else {
                 $massAssignmentErrors[] = $key;
             }
         }
+
         if ($massAssignmentErrors) {
             throw new ERException('can\'t mass-assign protected attributes: ' . implode(', ', $massAssignmentErrors), 2);
         }
@@ -929,7 +1309,7 @@ class EasyRecord {
 
     public function groupUpdate($ids = []) {
         if (!$ids || !is_array($ids)) {
-            return FALSE;
+            return false;
         }
 
         extract($this->buildUpdateGroup($ids));
@@ -937,7 +1317,8 @@ class EasyRecord {
 
         $this->dirty = [];
         $this->expr  = [];
-        return TRUE;
+
+        return true;
     }
 
 
@@ -950,22 +1331,26 @@ class EasyRecord {
      * @return boolean
      */
 
-    public function save($force = FALSE) {
+    public function save($force = false) {
+        $sqlQuery  = null;
+        $bindParam = null;
+
         if ($this->readOnly) {
             throw new ERException('readOnly objects can not be saved', 3);
         }
 
         $config = & static::getConfig();
+
         if ($config['beforeValidation']) {
             foreach ($config['beforeValidation'] as $beforeValidation) {
-                if (call_user_func(array($this, $beforeValidation)) === FALSE) {
-                    return FALSE;
+                if (call_user_func(array($this, $beforeValidation)) === false) {
+                    return false;
                 }
             }
         }
 
         if (!$force && $this->validation()) {
-            return FALSE;
+            return false;
         }
 
         if ($config['afterValidation']) {
@@ -976,35 +1361,39 @@ class EasyRecord {
 
         if ($config['beforeSave']) {
             foreach ($config['beforeSave'] as $beforeSave) {
-                if (call_user_func(array($this, $beforeSave)) === FALSE) {
-                    return FALSE;
+                if (call_user_func(array($this, $beforeSave)) === false) {
+                    return false;
                 }
             }
         }
 
         $values = array_values(array_diff_key($this->dirty, $this->expr));
+
         if (!$this->isNew()) {
-            $newObject = FALSE;
+            $newObject = false;
+
             if ($config['beforeUpdate']) {
                 foreach ($config['beforeUpdate'] as $beforeUpdate) {
-                    if (call_user_func(array($this, $beforeUpdate)) === FALSE) {
-                        return FALSE;
+                    if (call_user_func(array($this, $beforeUpdate)) === false) {
+                        return false;
                     }
                 }
             }
+
             $this->relations()->updateRelations($this);
+
             if (empty($values) && empty($this->expr)) {
                 $this->errors = new ERErreurManager;
-                return TRUE;
+                return true;
             }
             extract($this->buildUpdate());
         }
         else {
-            $newObject = TRUE;
+            $newObject = true;
             if ($config['beforeCreate']) {
                 foreach ($config['beforeCreate'] as $beforeCreate) {
-                    if (call_user_func(array($this, $beforeCreate)) === FALSE) {
-                        return FALSE;
+                    if (call_user_func(array($this, $beforeCreate)) === false) {
+                        return false;
                     }
                 }
             }
@@ -1012,17 +1401,23 @@ class EasyRecord {
         }
 
         ERTools::execute($sqlQuery, $bindParam);
+
         if ($this->isNew()) {
-            $lastId                            = ERDB::getInstance()->lastId();
-            if ($lastId) {
-                $this->data[self::getIdentifier()] = $lastId;
+            if (count(self::getIdentifier(self::READ_TO_ARRAY)) == 1) {
+                $lastId = ERDB::getInstance()->lastId();
+
+                if ($lastId) {
+                    $this->data[self::getIdentifier(self::READ_TO_LOWER)] = $lastId;
+                }
             }
-            $this->newRecord                   = FALSE;
+
+            $this->newRecord = false;
             $this->relations()->createRelations($this);
         }
 
         if ($this->expr) {
-            $objectValues = $this::assocArray()->select(array_keys($this->expr))->noCache()->find($this->getIdentifierValue());
+            $objectValues = self::assocArray()->select(array_keys($this->expr))->noCache()->find($this->getIdentifierValue(self::READ_TO_ARRAY));
+
             foreach ($objectValues as $key => $value) {
                 $this->data[$key] = $value;
                 unset($this->dirty[$key]);
@@ -1062,10 +1457,10 @@ class EasyRecord {
         $className = get_class($this);
 
         if (self::cacheActivation() == 'full') {
-            ERCache::getInstance()->nsDelete('EasyRecordCache', $className . '_' . self::getIdentifierValue() . self::cacheActivation() . self::cacheTime());
+            ERCache::getInstance()->nsDelete('EasyRecordCache', $className . '_' . self::getIdentifierValue(self::READ_TO_STRING) . self::cacheActivation() . self::cacheTime());
         }
 
-        return TRUE;
+        return true;
     }
 
 
@@ -1080,21 +1475,21 @@ class EasyRecord {
      * @return int
      */
 
-    public function updateAttributes($attributes, $bypassAttrAccessible = FALSE, $save = TRUE) {
+    public function updateAttributes($attributes, $bypassAttrAccessible = false, $save = true) {
         if (!isset($GLOBALS['update_attributes_object_hash'])) {
-            $GLOBALS['update_attributes_object_hash']            = spl_object_hash($this);
+            $GLOBALS['update_attributes_object_hash'] = spl_object_hash($this);
         }
 
         if (!isset($GLOBALS['update_attributes_objects'])) {
-            $GLOBALS['update_attributes_objects']                = [];
+            $GLOBALS['update_attributes_objects'] = [];
         }
 
         if (!isset($GLOBALS['update_attributes_errors'])) {
-            $GLOBALS['update_attributes_errors']                 = [];
+            $GLOBALS['update_attributes_errors'] = [];
         }
 
         if (!isset($GLOBALS['update_attributes_new'])) {
-            $GLOBALS['update_attributes_new']                    = $this->isNew();
+            $GLOBALS['update_attributes_new'] = $this->isNew();
         }
 
         if (!isset($GLOBALS['update_attributes_mass_assignment_errors'])) {
@@ -1107,18 +1502,20 @@ class EasyRecord {
         }
 
         $config  = & static::getConfig();
+
         foreach ($attributes as $key => $value) {
             if ($bypassAttrAccessible || count($config['attrAccessible']) == 0 || in_array($key, $config['attrAccessible'])) {
                 $keyU = ucfirst($key);
+
                 if (in_array($keyU, $config['hasOne']) || array_key_exists($keyU, $config['hasOne'])) {
                     $hasOnes[$key] = $value;
                 }
-                elseif ($this->$key !== $value || $value === NULL || in_array($key, $config['attrAccessor'])) {
-                    $this->$key = $value;
+                elseif ($this->$key !== $value || $value === null || in_array($key, $config['attrAccessor'])) {
+                    $this->$key    = $value;
                 }
             } else {
                 $GLOBALS['update_attributes_mass_assignment_errors'][] = $key;
-                $save                                                  = FALSE;
+                $save = false;
             }
         }
 
@@ -1126,20 +1523,21 @@ class EasyRecord {
             if ($this->isNew()) {
                 if ($this->save()) {
                     $GLOBALS['update_attributes_objects'][] = $this;
-                    $save                                   = TRUE;
+                    $save                                   = true;
                 }
                 else {
                     $GLOBALS['update_attributes_errors'][] = $this;
-                    $save                                  = FALSE;
+                    $save                                  = false;
                 }
             }
             else {
                 $GLOBALS['update_attributes_objects'][] = $this;
-                $save                                   = TRUE;
+                $save                                   = true;
             }
         }
         else {
             $GLOBALS['update_attributes_errors'][] = $this;
+            //$save = false;
         }
 
         foreach ($hasOnes as $key => $value) {
@@ -1177,6 +1575,7 @@ class EasyRecord {
 
             unset($GLOBALS['update_attributes_mass_assignment_errors']);
         }
+
         return !count($this->getAndConstructErrors());
     }
 
@@ -1190,12 +1589,13 @@ class EasyRecord {
      */
 
     public function delete() {
-        if ($this->getIdentifierValue()) {
+        if ($this->hasIdentifier()) {
             $config = & static::getConfig();
+
             if ($config['beforeDelete']) {
                 foreach ($config['beforeDelete'] as $beforeDelete) {
-                    if (call_user_func(array($this, $beforeDelete)) === FALSE) {
-                        return FALSE;
+                    if (call_user_func(array($this, $beforeDelete)) === false) {
+                        return false;
                     }
                 }
             }
@@ -1203,34 +1603,40 @@ class EasyRecord {
             if ($config['hasMany']) {
                 $this->deleteHasMany();
             }
+
             if ($config['hasOne']) {
                 $this->deleteHasOne();
             }
+
             if ($config['hasAndBelongsToMany']) {
                 $this->deleteHasAndBelongsToMany();
             }
 
             $database = static::database();
             $table    = static::table();
-            $query    = implode(' ', array(
-                'DELETE FROM',
-                ERTools::quoteIdentifiant($database) . '.' . ERTools::quoteIdentifiant($table),
-                'WHERE',
-                ERTools::quoteIdentifiant(self::getIdentifier()),
-                '= ' . $this->getIdentifierValue(),
-            ));
 
-            ERTools::execute($query, new ERBindParam);
+            $query = 'DELETE FROM ' . ERTools::quoteIdentifiant($database) . '.' . ERTools::quoteIdentifiant($table) . ' WHERE ';
+
+            $bindParam = new ERBindParam;
+            $condition = [];
+            foreach ($this->getIdentifierValue(self::READ_TO_ARRAY) as $col => $value) {
+                $condition[] = ERTools::quoteIdentifiant($col) . ' = ?';
+                $bindParam->add(static::mapping()[$col]['type'][0], $value);
+            }
+
+            $query .= implode(' AND ', $condition);
+
+            ERTools::execute($query, $bindParam);
+
             if ($config['afterDelete']) {
                 foreach ($config['afterDelete'] as $afterDelete) {
                     call_user_func(array($this, $afterDelete));
                 }
             }
-            return TRUE;
+            return true;
         }
-        return TRUE;
+        return true;
     }
-
 
 
     ############################################################################
@@ -1252,7 +1658,6 @@ class EasyRecord {
         }
         return $this->relations;
     }
-
 
 
     ############################################################################
@@ -1282,16 +1687,24 @@ class EasyRecord {
                 if (array_key_exists($field, static::mapping())) {
                     $type_colonne  = static::mapping()[$field]['type'][0];
                 }
+
                 $bindParam->add($type_colonne, $value);
             } else {
-                $listeChamps[] = ERTools::quoteIdentifiant($field) . ' = ' . ($value === NULL ? 'NULL' : $value);
+                $listeChamps[] = ERTools::quoteIdentifiant($field) . ' = ' . ($value === null ? 'null' : $value);
             }
         }
 
         $requete[] = implode(', ', $listeChamps);
         $requete[] = 'WHERE';
-        $requete[] = ERTools::quoteIdentifiant(static::getIdentifier());
-        $requete[] = '= "' . $this->getIdentifierValue() . '"';
+
+        $condition = [];
+
+        foreach ($this->getIdentifierValue(self::READ_TO_ARRAY) as $col => $value) {
+            $condition[] = ERTools::quoteIdentifiant($col) . ' = ?';
+            $bindParam->add(static::mapping()[$col]['type'][0], $value);
+        }
+
+        $requete[] = implode(' AND ', $condition);
 
         return ['sqlQuery' => implode(' ', $requete), 'bindParam' => $bindParam];
     }
@@ -1312,6 +1725,7 @@ class EasyRecord {
         $requete[] = 'UPDATE ' . ERTools::quoteIdentifiant(static::database()) . '.' . ERTools::quoteIdentifiant(static::table()) . ' SET';
 
         $listeChamps = [];
+
         foreach ($this->dirty as $field => $value) {
             if (!array_key_exists($field, $this->expr)) {
                 $listeChamps[] = ERTools::quoteIdentifiant($field) . ' = ?';
@@ -1322,14 +1736,26 @@ class EasyRecord {
                 }
                 $bindParam->add($type_colonne, $value);
             } else {
-                $listeChamps[] = ERTools::quoteIdentifiant($field) . ' = ' . ($value === '' ? 'NULL' : $value);
+                $listeChamps[] = ERTools::quoteIdentifiant($field) . ' = ' . ($value === '' ? 'null' : $value);
             }
         }
 
         $requete[] = implode(', ', $listeChamps);
         $requete[] = 'WHERE';
-        $requete[] = ERTools::quoteIdentifiant(static::getIdentifier());
-        $requete[] = 'IN (' . implode(', ', $ids) . ')';
+
+        $pk = static::getIdentifier(self::READ_TO_ARRAY);
+        if(count($pk) == 1) {
+            $requete[] = '(' . implode(', ', $pk) . ')';
+            $requete[] = 'IN (' . implode(', ', $ids) . ')';
+        } else {
+            $requete[] =  ERTools::quoteIdentifiant($pk[0]);
+
+            foreach($ids as $key => $value) {
+                $ids[$key] = '(' . implode(', ', $value). ')';
+            }
+
+            $requete[] = 'IN (' . implode(', ', $ids) . ')';
+        }
 
         return ['sqlQuery' => implode(' ', $requete), 'bindParam' => $bindParam];
     }
@@ -1347,32 +1773,36 @@ class EasyRecord {
         $bindParam   = new ERBindParam();
         $requete[]   = 'INSERT INTO';
         $requete[]   = ERTools::quoteIdentifiant(static::database()) . '.' . ERTools::quoteIdentifiant(static::table());
-        $listeChamps = array_map('System\Orm\ERTools::quoteIdentifiant', array_keys($this->dirty));
+        $listeChamps = array_map('Orb\EasyRecord\ERTools::quoteIdentifiant', array_keys($this->dirty));
         $requete[]   = '(' . implode(', ', $listeChamps) . ')';
         $requete[]   = 'VALUES';
         $requete[]   = '(';
 
-        $first = TRUE;
+        $first = true;
+
         foreach ($this->dirty as $field => $value) {
-            $requeteStr = NULL;
+            $requeteStr = null;
 
             if (!$first) {
                 $requeteStr .= ',';
             }
 
             if (isset($this->expr[$field])) {
-                $requeteStr .= $value === NULL ? 'NULL' : $value;
+                $requeteStr .= $value === null ? 'null' : $value;
             }
             else {
                 $requeteStr .= '?';
                 $type_colonne = 's';
+
                 if (array_key_exists($field, static::mapping())) {
                     $type_colonne = static::mapping()[$field]['type'][0];
                 }
+
                 $bindParam->add($type_colonne, $value);
             }
+
             $requete[] = $requeteStr;
-            $first     = FALSE;
+            $first     = false;
         }
         $requete[] = ')';
         return ['sqlQuery' => implode(' ', $requete), 'bindParam' => $bindParam];
@@ -1388,22 +1818,23 @@ class EasyRecord {
      * @return boolean
      */
 
-    public function deleteHasMany($relation = NULL) {
+    public function deleteHasMany($relation = null) {
         $hasManies = static::getConfig('hasMany');
+
         if ($relation) {
-            $hasManies = array_intersect_key($hasManies, [$relation => TRUE]);
+            $hasManies = array_intersect_key($hasManies, [$relation => true]);
         }
 
         foreach ($hasManies as $key => $hasMany) {
             if (is_array($hasMany) && array_key_exists('dependent', $hasMany) && !array_key_exists('through', $hasMany)) {
-                $objetName = $key;
+                $objetName = 'Agendaweb\App\Models\\' . $key;
 
                 if ($objetName[strlen($objetName) - 1] == 's') {
                     $objetName = substr($objetName, 0, strlen($objetName) - 1);
                 }
 
                 if (array_key_exists('class_name', $hasMany)) {
-                    $objetName = $hasMany['class_name'];
+                    $objetName = 'Agendaweb\App\Models\\' . $hasMany['class_name'];
                 }
 
                 if (array_key_exists('inverse_of', $hasMany)) {
@@ -1418,30 +1849,54 @@ class EasyRecord {
                 }
 
                 if (!isset($cleEtrangere)) {
-                    $cleEtrangere = self::getIdentifier();
+                    $cleEtrangere = self::getIdentifier(self::READ_TO_ARRAY);
                 }
 
-                $objets = $objetName::where($cleEtrangere, $this->getIdentifierValue());
+                $objets = $objetName::query();
+
+                if(is_array($cleEtrangere)) {
+                    foreach ($this->getIdentifierValue(self::READ_TO_ARRAY) as $col => $value) {
+                        $objets->where($col, $value);
+                    }
+                } else {
+                    $objets->where($cleEtrangere, $this->getIdentifierValue(self::READ_TO_STRING));
+                }
+
                 if ($hasMany['dependent'] == 'destroy') {
                     foreach ($objets as $objetToDelete) {
                         $objetToDelete->delete();
                     }
-                    return TRUE;
+                    return true;
                 }
                 elseif ($hasMany['dependent'] == 'delete_all') {
-                    ERDB::getInstance()->query('DELETE FROM ' . $objetName::database() . '.' . $objetName::table() . ' WHERE ' . $cleEtrangere . ' = "' . $this->getIdentifierValue() . '"');
-                    return TRUE;
+                    $request = 'DELETE FROM ' . $objetName::database() . '.' . $objetName::table() . ' WHERE ';
+
+                    $condition = [];
+
+                    $bindParam = new ERBindParam();
+                    foreach ($this->getIdentifierValue(self::READ_TO_ARRAY) as $col => $value) {
+                        $condition[] = ERTools::quoteIdentifiant($col) . ' = ?';
+                        $bindParam->add(static::mapping()[$col]['type'][0], $value);
+                    }
+
+                    $request .= implode(' AND ', $condition);
+
+                    ERDB::getInstance()->query($request, $bindParam);
+
+                    return true;
                 }
-                elseif ($hasMany['dependent'] == 'NULLify') {
+                elseif ($hasMany['dependent'] == 'nullify') {
                     foreach ($objets as $objetToDelete) {
-                        $objetToDelete->$cleEtrangere = NULL;
+                        foreach ($this->getIdentifier(self::READ_TO_ARRAY) as $pk) {
+                            $objetToDelete->$pk = null;
+                        }
                         $objetToDelete->save();
                     }
-                    return TRUE;
+                    return true;
                 }
             }
         }
-        return FALSE;
+        return false;
     }
 
 
@@ -1453,13 +1908,15 @@ class EasyRecord {
 
     private function deleteHasOne() {
         foreach (static::getConfig('hasOne') as $key => $hasOne) {
+            $key = 'Agendaweb\App\Models\\' . $key;
+
             if (is_array($hasOne) && array_key_exists('dependent', $hasOne)) {
-                if (array_key_exists('foreign_key', $hasOne)){
+                if (array_key_exists('foreign_key', $hasOne)) {
                     $cleEtrangere = $hasOne['foreign_key'];
                 }
 
                 if (array_key_exists('class_name', $hasOne)) {
-                    $key          = $hasOne['class_name'];
+                    $key = 'Agendaweb\App\Models\\' . $hasOne['class_name'];
                 }
 
                 if (!isset($cleEtrangere) && array_key_exists('inverse_of', $hasOne)) {
@@ -1467,10 +1924,18 @@ class EasyRecord {
                 }
 
                 if (!isset($cleEtrangere)) {
-                    $cleEtrangere = self::getIdentifier();
+                    $cleEtrangere = self::getIdentifier(self::READ_TO_ARRAY);
                 }
 
-                $objets = $key::where($cleEtrangere, $this->getIdentifierValue());
+                $objets = $objetName::query();
+
+                if(is_array($cleEtrangere)) {
+                    foreach ($this->getIdentifierValue(self::READ_TO_ARRAY) as $col => $value) {
+                        $objets->where($col, $value);
+                    }
+                } else {
+                    $objets->where($cleEtrangere, $this->getIdentifierValue(self::READ_TO_STRING));
+                }
 
                 if ($hasOne['dependent'] == 'destroy') {
                     foreach ($objets as $objetToDelete) {
@@ -1478,11 +1943,27 @@ class EasyRecord {
                     }
                 }
                 elseif ($hasOne['dependent'] == 'delete_all') {
-                    ERDB::getInstance()->query('DELETE FROM ' . $key::table() . ' WHERE ' . $cleEtrangere . ' = "' . $this->getIdentifierValue() . '"');
+                    $request = 'DELETE FROM ' . $objetName::database() . '.' . $objetName::table() . ' WHERE ';
+
+                    $condition = [];
+
+                    $bindParam = new ERBindParam();
+                    foreach ($this->getIdentifierValue(self::READ_TO_ARRAY) as $col => $value) {
+                        $condition[] = ERTools::quoteIdentifiant($col) . ' = ?';
+                        $bindParam->add(static::mapping()[$col]['type'][0], $value);
+                    }
+
+                    $request .= implode(' AND ', $condition);
+
+                    ERDB::getInstance()->query($request, $bindParam);
+
+                    return true;
                 }
-                elseif ($hasOne['dependent'] == 'NULLify') {
+                elseif ($hasOne['dependent'] == 'nullify') {
                     foreach ($objets as $objetToDelete) {
-                        $objetToDelete->$cleEtrangere = NULL;
+                        foreach ($this->getIdentifier(self::READ_TO_ARRAY) as $pk) {
+                            $objetToDelete->$pk = null;
+                        }
                         $objetToDelete->save();
                     }
                 }
@@ -1502,14 +1983,14 @@ class EasyRecord {
         $table    = static::table();
         foreach (static::getConfig('hasAndBelongsToMany') as $key => $hasAndBelongsToMany) {
             if (is_array($hasAndBelongsToMany)) {
-                $objetName = $key;
+                $objetName = 'Agendaweb\App\Models\\' . $key;
 
                 if ($objetName[strlen($objetName) - 1] == 's') {
                     $objetName = substr($objetName, 0, strlen($objetName) - 1);
                 }
 
                 if (array_key_exists('class_name', $hasAndBelongsToMany)) {
-                    $objetName = $hasAndBelongsToMany['class_name'];
+                    $objetName = 'Agendaweb\App\Models\\' . $hasAndBelongsToMany['class_name'];
                 }
 
                 if (array_key_exists('inverse_of', $hasAndBelongsToMany)) {
@@ -1531,18 +2012,20 @@ class EasyRecord {
                     $database           = $infosArray['database'];
                 }
             } else {
-                $objetName = $hasAndBelongsToMany;
+                $objetName = 'Agendaweb\App\Models\\' . $hasAndBelongsToMany;
+
                 if ($objetName[strlen($objetName) - 1] == 's') {
                     $objetName = substr($objetName, 0, strlen($objetName) - 1);
                 }
             }
 
             if (!isset($concatCleEtrangere)) {
-                $concatCleEtrangere = self::getIdentifier();
+                $concatCleEtrangere = self::getIdentifier(self::READ_TO_ARRAY);
             }
 
             if (!isset($concatTable)) {
                 $habtmTable  = $objetName::table();
+
                 if ($habtmTable < $table) {
                     $concatTable = $habtmTable . '_' . $table;
                 }
@@ -1550,23 +2033,20 @@ class EasyRecord {
                     $concatTable = $table . '_' . $habtmTable;
                 }
             }
-            $concatTableDb = $database . '.' . $concatTable;
-            ERDB::getInstance()->query('DELETE FROM ' . $concatTableDb . ' WHERE ' . $concatCleEtrangere . ' = "' . $this->getIdentifierValue() . '"');
+
+            $request = 'DELETE FROM ' . $database . '.' . $concatTable . ' WHERE ';
+            $condition = [];
+
+            $bindParam = new ERBindParam();
+            foreach ($this->getIdentifierValue(self::READ_TO_ARRAY) as $col => $value) {
+                $condition[] = ERTools::quoteIdentifiant($col) . ' = ?';
+                $bindParam->add(static::mapping()[$col]['type'][0], $value);
+            }
+
+            $request .= implode(' AND ', $condition);
+
+            ERDB::getInstance()->query($request, $bindParam);
         }
-    }
-
-
-    // -------------------------------------------------------------------------
-
-    /**
-     * Donne une valeur à une attribut
-     *
-     * @param string key
-     * @param mixed value
-     */
-
-    public function setAttribute($key, $value) {
-        $this->data[$key] = $value;
     }
 
 
@@ -1599,19 +2079,34 @@ class EasyRecord {
     // -------------------------------------------------------------------------
 
     /**
-     * Initialisation du modèle
+     * Test l'existance d'un mutateur sur la lecture d'une propriété
+     *
+     * @param string key
      */
 
-    protected function init() {}
+    protected function hasGetMutator($key) {
+        return method_exists($this, 'get' . Text::underscoreToCamel($key) . 'Attribute');
+    }
 
 
     // -------------------------------------------------------------------------
 
     /**
-     * Règles de valisation du modèle
+     * Initialisation du modèle
      */
 
-    protected function validations() {}
+    protected function init() {
+    }
+
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Validations du modèle
+     */
+
+    protected function validations() {
+    }
 
 
     // -------------------------------------------------------------------------
@@ -1620,28 +2115,30 @@ class EasyRecord {
      * Scopes du modèle
      */
 
-    protected function scopes() {}
-
+    protected function scopes() {
+    }
 
     // -------------------------------------------------------------------------
 
     /**
      * Initialise le mapping du modèle
      *
-     * @return FALSE | array
+     * @return false | array
      */
 
+
     protected static function mappingInit() {
+        $className = get_called_class();
         $config    = & static::getConfig();
 
         if (!$config['mapping'] && self::mappingConfig()) {
             $config['database']    = (self::mappingConfig()['database'] == 'default' ? $GLOBALS['databaseCfg']['database'] : self::mappingConfig()['database']);
             $config['table']       = self::mappingConfig()['table'];
-            $config['identifiant'] = self::mappingConfig()['identifiant'];
+            $config['identifiant'] = is_array(self::mappingConfig()['identifiant']) ? self::mappingConfig()['identifiant'] : [self::mappingConfig()['identifiant']];
             $config['mapping']     = self::mappingConfig()['fields'];
             return self::mappingConfig();
         }
-        return FALSE;
+        return false;
     }
 
 
@@ -1656,18 +2153,19 @@ class EasyRecord {
      * @param array options
      */
 
-    protected function validates($field, $regle, $msg = NULL, $options = []) {
-        $configValidation           = & static::getConfig('validations');
+    protected function validates($field, $regle, $msg = null, $options = []) {
+        $configValidation = & static::getConfig('validations');
+
         if (!array_key_exists($field, $configValidation)) {
-            $configValidation[$field]   = [];
+            $configValidation[$field] = [];
         }
 
         if (!array_key_exists('label', $options)) {
-            $options['label']           = $field;
+            $options['label'] = $field;
         }
 
         if (!array_key_exists('required', $options)) {
-            $options['required']        = FALSE;
+            $options['required'] = false;
         }
 
         $validation                 = ['regle' => $regle, 'msg' => $msg, 'label' => $options['label'], 'required' => $options['required']];
@@ -1685,14 +2183,14 @@ class EasyRecord {
      * @param string $expr
      */
 
-    private function setProperty($key, $value = NULL, $expr = FALSE) {
+    private function setProperty($key, $value = null, $expr = false) {
         if (!is_array($value)) {
             if (!array_key_exists($key, static::mapping())) {
                 throw new ERException('Try to assign to a non defined attribute or accessor (' . $key . ')');
             }
 
             if (static::mapping()[$key]['type'] == 'integer' || static::mapping()[$key]['type'] == 'decimal') {
-                if (!is_numeric($value) && $value !== NULL) {
+                if (!is_numeric($value) && $value !== null) {
                     throw new ERException('Try to assign a non-numeric value (' . $value . ') to a numeric field (' . $key . ')');
                 }
                 else {
@@ -1720,16 +2218,17 @@ class EasyRecord {
             }
         }
         else {
-            $expr  = TRUE;
+            $expr  = true;
             $value = current($value);
         }
 
         $this->dirty[$key] = $value;
-        if (FALSE === $expr and isset($this->expr[$key])) {
+
+        if (false === $expr and isset($this->expr[$key])) {
             unset($this->expr[$key]);
         }
-        elseif (TRUE === $expr) {
-            $this->expr[$key] = TRUE;
+        elseif (true === $expr) {
+            $this->expr[$key] = true;
         }
     }
 
@@ -1748,6 +2247,7 @@ class EasyRecord {
 
     private function lectureRegles($champs, $regle, $test, $regleTab, $datas) {
         $regles = array('requis', 'existe', 'valeurs', 'unique', 'longueur_min', 'longueur_max', 'longueur_exacte', 'superieur', 'inferieur', 'alpha', 'alpha_numerique', 'numerique', 'entier', 'decimal', 'nb_naturel', 'nb_naturel_sans_zero', 'valid_email', 'valid_ip', 'valid_url');
+
         if (in_array($regle, $regles)) {
             switch ($regle) {
                 case 'requis':
@@ -1872,7 +2372,7 @@ class EasyRecord {
                     }
                     break;
                 case 'entier':
-                    if (($datas[$champs] || $regleTab['required']) && filter_var($datas[$champs], FILTER_VALIDATE_INT) === FALSE) {
+                    if (($datas[$champs] || $regleTab['required']) && filter_var($datas[$champs], FILTER_VALIDATE_INT) === false) {
                         if ($regleTab['msg']) {
                             $erreurTxt = $regleTab['msg'];
                         }
@@ -1883,7 +2383,7 @@ class EasyRecord {
                     }
                     break;
                 case 'decimal':
-                    if (($datas[$champs] || $regleTab['required']) && filter_var($datas[$champs], FILTER_VALIDATE_FLOAT) === FALSE) {
+                    if (($datas[$champs] || $regleTab['required']) && filter_var($datas[$champs], FILTER_VALIDATE_FLOAT) === false) {
                         if ($regleTab['msg']) {
                             $erreurTxt = $regleTab['msg'];
                         }
@@ -1899,7 +2399,7 @@ class EasyRecord {
                             'min_range' => 0
                         )
                     );
-                    if (($datas[$champs] || $regleTab['required']) && filter_var($datas[$champs], FILTER_VALIDATE_INT, $options) === FALSE) {
+                    if (($datas[$champs] || $regleTab['required']) && filter_var($datas[$champs], FILTER_VALIDATE_INT, $options) === false) {
                         if ($regleTab['msg']) {
                             $erreurTxt = $regleTab['msg'];
                         }
@@ -1915,7 +2415,7 @@ class EasyRecord {
                             'min_range' => 1
                         )
                     );
-                    if (($datas[$champs] || $regleTab['required']) && filter_var($datas[$champs], FILTER_VALIDATE_INT, $options) === FALSE) {
+                    if (($datas[$champs] || $regleTab['required']) && filter_var($datas[$champs], FILTER_VALIDATE_INT, $options) === false) {
                         if ($regleTab['msg']) {
                             $erreurTxt = $regleTab['msg'];
                         }
@@ -1959,15 +2459,24 @@ class EasyRecord {
                     }
                     break;
                 case 'unique':
-                    $class        = get_class($this);
-                    if (array_key_exists($champs, $this->dirty))
-                            $valeurChamps = $this->dirty[$champs];
-                    else $valeurChamps = $this->data[$champs];
-                    $objects      = $class::where($champs, $valeurChamps);
-                    if (!$this->isNew()) {
-                        $objects = $objects->whereNotEqual(self::getIdentifier(), $this->getIdentifierValue());
+                    $class = get_class($this);
+                    if (array_key_exists($champs, $this->dirty)) {
+                        $valeurChamps = $this->dirty[$champs];
                     }
+                    else {
+                        $valeurChamps = $this->data[$champs];
+                    }
+
+                    $objects      = $class::where($champs, $valeurChamps);
+
+                    if (!$this->isNew()) {
+                        foreach(self::getIdentifierValue(self::READ_TO_ARRAY) as $col => $pk) {
+                            $objects = $objects->whereNotEqual($col, $pk);
+                        }
+                    }
+
                     $objects = $objects->count()->first()->count;
+
                     if ($objects) {
                         if ($regleTab['msg']) {
                             $erreurTxt = $regleTab['msg'];
@@ -1986,7 +2495,7 @@ class EasyRecord {
                     $erreurTxt = $regleTab['msg'];
                 }
                 else {
-                    $erreurTxt = NULL;
+                    $erreurTxt = null;
                 }
                 $this->errors->add($champs, $erreurTxt, $regle);
             }
@@ -2004,7 +2513,11 @@ class EasyRecord {
 
     private function validation() {
         $configValidations = & static::getConfig('validations');
-        if (!$configValidations) $this->validations();
+
+        if (!$configValidations) {
+            $this->validations();
+        }
+
         foreach ($configValidations as $champs => $regles) {
             if (array_key_exists($champs, $this->dirty) || array_key_exists($champs, $this->data) || (in_array($champs, static::getConfig('attrAccessor')) && property_exists($this, $champs))) {
                 if (array_key_exists($champs, $this->dirty)) {
@@ -2018,20 +2531,25 @@ class EasyRecord {
                 }
             }
             foreach ($regles as $regle) {
-                if (($regle['regle'] == 'requis' || $regle['regle'] == 'existe' || $regle['required'] == TRUE) || isset($datas)) {
+                if (($regle['regle'] == 'requis' || $regle['regle'] == 'existe' || $regle['required'] == true) || isset($datas)) {
                     if (!isset($datas)) {
-                        if ($regle['regle'] == 'existe') $datas = [];
-                        else $datas = [$champs => $this->$champs];
+                        if ($regle['regle'] == 'existe') {
+                            $datas = [];
+                        }
+                        else {
+                            $datas = [$champs => $this->$champs];
+                        }
                     }
-                    if (mb_strpos($regle['regle'], '[') !== FALSE) {
-                        $regleStr = mb_strstr($regle['regle'], '[', TRUE);
+                    if (mb_strpos($regle['regle'], '[') !== false) {
+                        $regleStr = mb_strstr($regle['regle'], '[', true);
                         $test     = mb_strstr($regle['regle'], '[');
                         $test     = str_replace('[', '', $test);
                         $test     = str_replace(']', '', $test);
                         $this->lectureRegles($champs, $regleStr, $test, $regle, $datas);
                     }
-                    else
-                            $this->lectureRegles($champs, $regle['regle'], NULL, $regle, $datas);
+                    else {
+                        $this->lectureRegles($champs, $regle['regle'], null, $regle, $datas);
+                    }
                 }
             }
             unset($datas);
@@ -2050,7 +2568,10 @@ class EasyRecord {
 
     private function getAndConstructErrors() {
         foreach (static::getConfig('hasOne') as $hasOne => $params) {
-            if (is_numeric($hasOne)) $hasOne     = $params;
+            if (is_numeric($hasOne)) {
+                $hasOne     = $params;
+            }
+
             $callObject = lcfirst($hasOne);
             $object     = $this->$callObject;
             $this->errors->merge($object->getAndConstructErrors());
@@ -2066,14 +2587,17 @@ class EasyRecord {
      */
 
     private function _parseClass() {
-        if ($this->namespace === NULL || $this->classname === NULL) {
+        if ($this->namespace === null || $this->classname === null) {
             $name            = get_class($this);
             $this->namespace = join('\\', array_slice(explode('\\', $name), 0, -1));
-            if ($this->namespace) $this->namespace .= '\\';
+
+            if ($this->namespace) {
+                $this->namespace .= '\\';
+            }
+
             $this->classname = join('', array_slice(explode('\\', $name), -1));
         }
     }
-
 }
 
 /* End of file */

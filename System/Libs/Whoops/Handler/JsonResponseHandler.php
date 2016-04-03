@@ -18,18 +18,18 @@ class JsonResponseHandler extends Handler
     /**
      * @var bool
      */
-    private $returnFrames = FALSE;
+    private $returnFrames = false;
 
     /**
      * @var bool
      */
-    private $onlyForAjaxRequests = FALSE;
+    private $onlyForAjaxRequests = false;
 
     /**
-     * @param  bool|NULL $returnFrames
-     * @return NULL|bool
+     * @param  bool|null $returnFrames
+     * @return null|bool
      */
-    public function addTraceToOutput($returnFrames = NULL)
+    public function addTraceToOutput($returnFrames = null)
     {
         if(func_num_args() == 0) {
             return $this->returnFrames;
@@ -39,10 +39,10 @@ class JsonResponseHandler extends Handler
     }
 
     /**
-     * @param  bool|NULL $onlyForAjaxRequests
-     * @return NULL|bool
+     * @param  bool|null $onlyForAjaxRequests
+     * @return null|bool
      */
-    public function onlyForAjaxRequests($onlyForAjaxRequests = NULL)
+    public function onlyForAjaxRequests($onlyForAjaxRequests = null)
     {
         if(func_num_args() == 0) {
             return $this->onlyForAjaxRequests;

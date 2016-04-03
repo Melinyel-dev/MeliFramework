@@ -75,12 +75,12 @@ class Module
 
         if (!empty($config['view_manager']['json_exceptions']['show_trace'])) {
             //Add trace to the JSON output
-            $jsonHandler->addTraceToOutput(TRUE);
+            $jsonHandler->addTraceToOutput(true);
         }
 
         if (!empty($config['view_manager']['json_exceptions']['ajax_only'])) {
             //Only return JSON response for AJAX requests
-            $jsonHandler->onlyForAjaxRequests(TRUE);
+            $jsonHandler->onlyForAjaxRequests(true);
         }
 
         if (!empty($config['view_manager']['json_exceptions']['display'])) {

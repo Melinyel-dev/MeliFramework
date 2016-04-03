@@ -92,10 +92,10 @@ class Image extends File {
         if ($width && $height) {
             $this->maxWidth  = $width;
             $this->maxHeight = $height;
-            return TRUE;
+            return true;
         }
 
-        return FALSE;
+        return false;
     }
 
     // -------------------------------------------------------------------------
@@ -126,14 +126,14 @@ class Image extends File {
      * @param string $to
      * @return \Agendaweb\Core\Helpers\Image
      */
-    public function prepare($to = NULL) {
+    public function prepare($to = null) {
 
         // CMJN TO RGB
         if ($this->imgMagick->getImageColorspace() == \Imagick::COLORSPACE_CMYK) {
             $this->imgMagick->setImageColorspace(\Imagick::COLORSPACE_CMYK);
-            $this->imgMagick->profileImage('*', NULL);
+            $this->imgMagick->profileImage('*', null);
             $this->imgMagick->setImageColorspace(\Imagick::COLORSPACE_SRGB);
-            $this->imgMagick->negateImage(FALSE, \Imagick::CHANNEL_ALL);
+            $this->imgMagick->negateImage(false, \Imagick::CHANNEL_ALL);
         }
 
         // Convert the output to jpeg
@@ -157,7 +157,7 @@ class Image extends File {
     }
 
     private function forceExtension($to, $ext) {
-        if ($to == NULL) {
+        if ($to == null) {
             $to = $this->path;
         }
 
@@ -180,7 +180,7 @@ class Image extends File {
     public function autorotate() {
         try {
             // Check if Orientation is set in properties
-            if ($this->imgMagick->getImageProperties("exif:Orientation", FALSE)) {
+            if ($this->imgMagick->getImageProperties("exif:Orientation", false)) {
 
                 // Change orientation
                 switch ($this->imgMagick->getImageOrientation()) {
@@ -212,13 +212,13 @@ class Image extends File {
                 // Update exif
                 $this->imgMagick->setImageOrientation(\Imagick::ORIENTATION_TOPLEFT);
 
-                return TRUE;
+                return true;
             }
         } catch (\ImagickException $ex) {
             return $ex->getMessage();
         }
 
-        return FALSE;
+        return false;
     }
 
     // -------------------------------------------------------------------------
@@ -237,12 +237,12 @@ class Image extends File {
 
         // Check if given sizes are considered as thumbnail
         if ($width * $height <= $this->thumbSizeLimit) {
-            $this->imgMagick->thumbnailImage($width, $height, TRUE);
+            $this->imgMagick->thumbnailImage($width, $height, true);
         } else {
-            $this->imgMagick->resizeimage($width, $height, \Imagick::FILTER_LANCZOS, 1, TRUE);
+            $this->imgMagick->resizeimage($width, $height, \Imagick::FILTER_LANCZOS, 1, true);
         }
 
-        return TRUE;
+        return true;
     }
 
     // -------------------------------------------------------------------------
@@ -266,11 +266,11 @@ class Image extends File {
      * @param string $to
      * @return \Agendaweb\Core\Helpers\Image
      */
-    public function save($to = NULL) {
+    public function save($to = null) {
 
         $this->imgMagick->writeImage($to);
 
-        if ($to == NULL || $to == $this->path) {
+        if ($to == null || $to == $this->path) {
             return $this;
         } else {
             return $this->create($to);

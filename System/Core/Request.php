@@ -92,7 +92,7 @@ class Request {
      *
      * @var boolean
      */
-    private static $isBuildParams = FALSE;
+    private static $isBuildParams = false;
 
     /**
      * Array of params
@@ -120,7 +120,7 @@ class Request {
      *
      * @var string
      */
-    private static $agent = NULL;
+    private static $agent = null;
 
     /**
      * Array of robots
@@ -134,7 +134,7 @@ class Request {
      *
      * @var string
      */
-    private static $robot = NULL;
+    private static $robot = null;
 
 
 
@@ -189,14 +189,14 @@ class Request {
     /**
      * Get Remote IP Adress
      *
-     * @return string|NULL
+     * @return string|null
      */
     public static function getIP() {
 
         // First call : Create remoteIP
         if (!isset(self::$remoteIP)) {
             $ip             = filter_input(INPUT_SERVER, 'REMOTE_ADDR', FILTER_VALIDATE_IP);
-            self::$remoteIP = $ip ? $ip : NULL;
+            self::$remoteIP = $ip ? $ip : null;
         }
         return self::$remoteIP;
     }
@@ -259,7 +259,7 @@ class Request {
             self::setParam($key, $val);
         }
 
-        self::$isBuildParams = TRUE;
+        self::$isBuildParams = true;
     }
 
     // -------------------------------------------------------------------------
@@ -273,7 +273,7 @@ class Request {
      */
     private static function protectParam($value, $protect) {
 
-        if ($protect !== FALSE && is_string($value)) {
+        if ($protect !== false && is_string($value)) {
             return filter_var($value, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         }
 
@@ -289,12 +289,12 @@ class Request {
      * @param mixed $value
      * @return bool : success or not
      */
-    public static function setParam($name, $value = NULL) {
+    public static function setParam($name, $value = null) {
 
         // Set a param
         if (isset($value) && is_string($name)) {
             self::$params[$name] = $value;
-            return TRUE;
+            return true;
         }
         // Set an array of param
         elseif ($name && is_array($name)) {
@@ -307,7 +307,7 @@ class Request {
             return $iInsert == count($name);
         }
 
-        return FALSE;
+        return false;
     }
 
     // -------------------------------------------------------------------------
@@ -321,7 +321,7 @@ class Request {
     public static function hasParam($name) {
 
         if (!is_string($name)) {
-            return FALSE;
+            return false;
         }
 
         if (!self::$isBuildParams) {
@@ -338,11 +338,11 @@ class Request {
      *
      * @param mixed $name :
      *          - string : get a parameter
-     *          - NULL   : get all parameters
+     *          - null   : get all parameters
      * @param mixed $default
      * @return mixed
      */
-    public static function getParam($name = NULL, $default = NULL, $protect = TRUE) {
+    public static function getParam($name = null, $default = null, $protect = true) {
 
         $value = $default;
 
@@ -400,15 +400,15 @@ class Request {
      * Get the ajax query parameters as a JSON array
      *
      * @param boolean $assoc
-     * @return NULL | array
+     * @return null | array
      */
-    public static function getAjaxParams($assoc = TRUE) {
-        $params = self::getParam('ajaxParams', NULL, FALSE);
+    public static function getAjaxParams($assoc = true) {
+        $params = self::getParam('ajaxParams', null, false);
         if($params) {
             return json_decode($params, $assoc);
         }
 
-        return NULL;
+        return null;
     }
 
 
@@ -422,7 +422,7 @@ class Request {
      */
     public static function setFile($file) {
         self::$file = $file;
-        return TRUE;
+        return true;
     }
 
     // -------------------------------------------------------------------------
@@ -445,12 +445,12 @@ class Request {
      * @param mixed $value
      * @return boolean
      */
-    public static function setOption($name, $value = NULL) {
+    public static function setOption($name, $value = null) {
 
         // Set an option
         if (isset($value) && is_string($name)) {
             self::$options[$name] = $value;
-            return TRUE;
+            return true;
         }
         // Set an array of options
         elseif ($name && is_array($name)) {
@@ -464,7 +464,7 @@ class Request {
             return $iInsert == count($name);
         }
 
-        return FALSE;
+        return false;
     }
 
     // -------------------------------------------------------------------------
@@ -487,7 +487,7 @@ class Request {
      * @param type $name
      * @return type
      */
-    public static function getOption($name, $default = NULL) {
+    public static function getOption($name, $default = null) {
 
         if (self::hasOption($name)) {
             return self::$options[$name];
@@ -501,11 +501,11 @@ class Request {
     /**
      * Get the current user agent
      *
-     * @return string|FALSE
+     * @return string|false
      */
     public static function getAgent() {
-        if (self::$agent === NULL) {
-            self::$agent = (!isset($_SERVER['HTTP_USER_AGENT'])) ? FALSE : $_SERVER['HTTP_USER_AGENT'];
+        if (self::$agent === null) {
+            self::$agent = (!isset($_SERVER['HTTP_USER_AGENT'])) ? false : $_SERVER['HTTP_USER_AGENT'];
         }
 
         return self::$agent;
@@ -531,7 +531,7 @@ class Request {
      */
     public static function getRobot() {
 
-        if (self::$robot === NULL) {
+        if (self::$robot === null) {
 
             if (self::$robots) {
                 foreach (self::$robots as $key => $val) {
@@ -542,7 +542,7 @@ class Request {
                 }
             }
             else {
-                self::$robot = FALSE;
+                self::$robot = false;
             }
         }
 

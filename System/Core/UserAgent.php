@@ -15,35 +15,35 @@ class UserAgent {
      *
      * @var \Orb\Http\UserAgent
      */
-    protected static $instance = NULL;
+    protected static $instance = null;
 
     /**
      * Current user-agent
      *
      * @var string
      */
-    protected $agent = NULL;
+    protected $agent = null;
 
     /**
      * Flag for if the user-agent belongs to a browser
      *
      * @var bool
      */
-    protected $is_browser = FALSE;
+    protected $is_browser = false;
 
     /**
      * Flag for if the user-agent is a robot
      *
      * @var bool
      */
-    protected $is_robot = FALSE;
+    protected $is_robot = false;
 
     /**
      * Flag for if the user-agent is a mobile browser
      *
      * @var bool
      */
-    protected $is_mobile = FALSE;
+    protected $is_mobile = false;
 
     /**
      * Languages accepted by the current user agent
@@ -143,7 +143,7 @@ class UserAgent {
             $this->agent = trim($_SERVER['HTTP_USER_AGENT']);
         }
 
-        if ($this->agent !== NULL && $this->_load_agent_file()) {
+        if ($this->agent !== null && $this->_load_agent_file()) {
             $this->_compile_data();
         }
     }
@@ -156,7 +156,7 @@ class UserAgent {
      * @return \Orb\Http\UserAgent
      */
     public static function getInstance() {
-        if (self::$instance === NULL) {
+        if (self::$instance === null) {
             self::$instance = new static();
         }
 
@@ -174,30 +174,30 @@ class UserAgent {
 
         require __DIR__ . '/user_agents.php';
 
-        $return = FALSE;
+        $return = false;
 
         if (isset($platforms)) {
             $this->platforms = $platforms;
             unset($platforms);
-            $return          = TRUE;
+            $return          = true;
         }
 
         if (isset($browsers)) {
             $this->browsers = $browsers;
             unset($browsers);
-            $return         = TRUE;
+            $return         = true;
         }
 
         if (isset($mobiles)) {
             $this->mobiles = $mobiles;
             unset($mobiles);
-            $return        = TRUE;
+            $return        = true;
         }
 
         if (isset($robots)) {
             $this->robots = $robots;
             unset($robots);
-            $return       = TRUE;
+            $return       = true;
         }
 
         return $return;
@@ -214,7 +214,7 @@ class UserAgent {
         $this->_set_platform();
 
         foreach (array('_set_robot', '_set_browser', '_set_mobile') as $function) {
-            if ($this->$function() === TRUE) {
+            if ($this->$function() === true) {
                 break;
             }
         }
@@ -232,13 +232,13 @@ class UserAgent {
             foreach ($this->platforms as $key => $val) {
                 if (preg_match('|' . preg_quote($key) . '|i', $this->agent)) {
                     $this->platform = $val;
-                    return TRUE;
+                    return true;
                 }
             }
         }
 
         $this->platform = 'Unknown Platform';
-        return FALSE;
+        return false;
     }
 
     // -------------------------------------------------------------------------
@@ -252,16 +252,16 @@ class UserAgent {
         if (is_array($this->browsers) && count($this->browsers) > 0) {
             foreach ($this->browsers as $key => $val) {
                 if (preg_match('|' . $key . '.*?([0-9\.]+)|i', $this->agent, $match)) {
-                    $this->is_browser = TRUE;
+                    $this->is_browser = true;
                     $this->version    = $match[1];
                     $this->browser    = $val;
                     $this->_set_mobile();
-                    return TRUE;
+                    return true;
                 }
             }
         }
 
-        return FALSE;
+        return false;
     }
 
     // -------------------------------------------------------------------------
@@ -275,15 +275,15 @@ class UserAgent {
         if (is_array($this->robots) && count($this->robots) > 0) {
             foreach ($this->robots as $key => $val) {
                 if (preg_match('|' . preg_quote($key) . '|i', $this->agent)) {
-                    $this->is_robot = TRUE;
+                    $this->is_robot = true;
                     $this->robot    = $val;
                     $this->_set_mobile();
-                    return TRUE;
+                    return true;
                 }
             }
         }
 
-        return FALSE;
+        return false;
     }
 
     // -------------------------------------------------------------------------
@@ -296,15 +296,15 @@ class UserAgent {
     protected function _set_mobile() {
         if (is_array($this->mobiles) && count($this->mobiles) > 0) {
             foreach ($this->mobiles as $key => $val) {
-                if (FALSE !== (stripos($this->agent, $key))) {
-                    $this->is_mobile = TRUE;
+                if (false !== (stripos($this->agent, $key))) {
+                    $this->is_mobile = true;
                     $this->mobile    = $val;
-                    return TRUE;
+                    return true;
                 }
             }
         }
 
-        return FALSE;
+        return false;
     }
 
     // -------------------------------------------------------------------------
@@ -349,10 +349,10 @@ class UserAgent {
      * @param   string  $key
      * @return  bool
      */
-    public function isBrowser($key = NULL) {
+    public function isBrowser($key = null) {
 
         // No need to be specific, it's a browser
-        if ($key === NULL) {
+        if ($key === null) {
             return $this->is_browser;
         }
 
@@ -368,10 +368,10 @@ class UserAgent {
      * @param   string  $key
      * @return  bool
      */
-    public function isRobot($key = NULL) {
+    public function isRobot($key = null) {
 
         // No need to be specific, it's a robot
-        if ($key === NULL) {
+        if ($key === null) {
             return $this->is_robot;
         }
 
@@ -387,10 +387,10 @@ class UserAgent {
      * @param   string  $key
      * @return  bool
      */
-    public function isMobile($key = NULL) {
+    public function isMobile($key = null) {
 
         // No need to be specific, it's a mobile
-        if ($key === NULL) {
+        if ($key === null) {
             return $this->is_mobile;
         }
 
@@ -514,7 +514,7 @@ class UserAgent {
      * @return  bool
      */
     public function acceptLang($lang = 'en') {
-        return in_array(strtolower($lang), $this->languages(), TRUE);
+        return in_array(strtolower($lang), $this->languages(), true);
     }
 
     // -------------------------------------------------------------------------
@@ -526,7 +526,7 @@ class UserAgent {
      * @return  bool
      */
     public function acceptCharset($charset = 'utf-8') {
-        return in_array(strtolower($charset), $this->charsets(), TRUE);
+        return in_array(strtolower($charset), $this->charsets(), true);
     }
 
     // -------------------------------------------------------------------------
@@ -539,9 +539,9 @@ class UserAgent {
      */
     public function parse($string) {
         // Reset values
-        $this->is_browser = FALSE;
-        $this->is_robot   = FALSE;
-        $this->is_mobile  = FALSE;
+        $this->is_browser = false;
+        $this->is_robot   = false;
+        $this->is_mobile  = false;
         $this->browser    = '';
         $this->version    = '';
         $this->mobile     = '';

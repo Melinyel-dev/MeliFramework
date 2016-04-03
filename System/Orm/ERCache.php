@@ -30,8 +30,8 @@ class ERCache extends \Memcached {
 
     private $prefix          = '__';
     private $cacheLocal      = [];
-    private $active          = FALSE;
-    private static $instance = NULL;
+    private $active          = false;
+    private static $instance = null;
 
     // -------------------------------------------------------------------------
 
@@ -41,7 +41,7 @@ class ERCache extends \Memcached {
      * @return \Orb\EasyRecord\ERCache
      */
     public static function getInstance() {
-        if (self::$instance === NULL) {
+        if (self::$instance === null) {
             self::$instance = new static();
         }
 
@@ -59,19 +59,16 @@ class ERCache extends \Memcached {
      */
     public function connect($host, $port) {
 
-        // Check if the server is active
-        $serverExists = $this->_isServerActive($host, $port);
+        parent::addServer($host, $port);
 
-        // Check if the server is already registered
-        if ($serverExists) {
-            $status = parent::getVersion();
-            if (!isset($status[$host . ':' . $port])) {
-                parent::addServer($host, $port);
-            }
+        $status = parent::getVersion();
+
+        if (isset($status[$host . ':' . $port]) && $status[$host . ':' . $port] !== '255.255.255') {
+            $this->active = true;
         }
-
-        // Set if memcached is available or not
-        $this->active = $serverExists && !empty(parent::getVersion());
+        else {
+            $this->active = false;
+        }
 
         return $this->active;
     }
@@ -105,11 +102,11 @@ class ERCache extends \Memcached {
     /**
      * Get an item
      *
-     * @param string $namespace If FALSE, get all namespaces keys
-     * @param string $key If FALSE, get all keys in a namespace
+     * @param string $namespace If false, get all namespaces keys
+     * @param string $key If false, get all keys in a namespace
      * @return boolean
      */
-    public function nsGet($namespace, $key, $default = FALSE) {
+    public function nsGet($namespace, $key, $default = false) {
 
         // Get from local
         if (isset($this->cacheLocal[$namespace][$key])) {
@@ -120,10 +117,23 @@ class ERCache extends \Memcached {
         if ($this->isActive()) {
             $result                             = $this->_getItem($namespace, $key);
             $this->cacheLocal[$namespace][$key] = $result;
-            return $result;
+            return $result !== false ? $result : $default;
         }
 
         return $default;
+    }
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Get counter
+     *
+     * @param string $namespace
+     * @param string $key
+     * @return int
+     */
+    public function nsGetCounter($namespace, $key) {
+        return intval($this->nsGet($namespace, $key, 0));
     }
 
     // -------------------------------------------------------------------------
@@ -135,7 +145,7 @@ class ERCache extends \Memcached {
      * @param array $keys If empty, it returns all data from the namespace
      * @return array
      */
-    public function nsGetMulti($namespace, $keys = []) {
+    public function nsGetMulti($namespace, $keys = null) {
 
         $result = [];
 
@@ -145,7 +155,7 @@ class ERCache extends \Memcached {
         }
 
         // All keys if empty
-        if (empty($keys)) {
+        if ($keys === null) {
             $keys = $this->nsGetNamespaceKeys($namespace);
         }
 
@@ -270,6 +280,70 @@ class ERCache extends \Memcached {
     // -------------------------------------------------------------------------
 
     /**
+     * Increment a key value
+     *
+     * @param string $namespace
+     * @param string $key
+     * @param int $expiration
+     * @param int $offset
+     * @param int $initial_value
+     * @return boolean
+     */
+    public function nsIncrement($namespace, $key, $expiration = 0, $offset = 1, $initial_value = 0) {
+
+        // Set to memcached
+        if ($this->isActive()) {
+
+            // Build expiration time in seconds
+            $exp = $this->_buildExpiration($expiration);
+
+            // Set the namespace
+            $this->_setNamespaces($namespace);
+
+            // Set key to the namespace
+            $this->_setNamespaceKeys($namespace, $key, $exp);
+
+            return parent::increment($this->keyItem($namespace, $key), $offset, $initial_value, $exp);
+        }
+
+        return false;
+    }
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Decrement a key value
+     *
+     * @param string $namespace
+     * @param string $key
+     * @param int $expiration
+     * @param int $offset
+     * @param int $initial_value
+     * @return boolean
+     */
+    public function nsDecrement($namespace, $key, $expiration = 0, $offset = 1, $initial_value = 0) {
+
+        // Set to memcached
+        if ($this->isActive()) {
+
+            // Build expiration time in seconds
+            $exp = $this->_buildExpiration($expiration);
+
+            // Set the namespace
+            $this->_setNamespaces($namespace);
+
+            // Set key to the namespace
+            $this->_setNamespaceKeys($namespace, $key, $exp);
+
+            return parent::decrement($this->keyItem($namespace, $key), $offset, $initial_value, $exp);
+        }
+
+        return false;
+    }
+
+    // -------------------------------------------------------------------------
+
+    /**
      * Set a list of items
      *
      * @param string $namespace
@@ -309,8 +383,8 @@ class ERCache extends \Memcached {
     /**
      * Delete an item
      *
-     * @param string $namespace If FALSE, all data are deleted
-     * @param string $key If FALSE all data in a namespace are deleted
+     * @param string $namespace If false, all data are deleted
+     * @param string $key If false all data in a namespace are deleted
      */
     public function nsDelete($namespace, $key) {
 
@@ -334,8 +408,8 @@ class ERCache extends \Memcached {
     /**
      * Delete items into a namespace
      *
-     * @param  string $namespace If FALSE, all data are deleted
-     * @param  array  $keys      If FALSE all data in a namespace are deleted
+     * @param  string $namespace If false, all data are deleted
+     * @param  array  $keys      If false all data in a namespace are deleted
      */
     public function nsDeleteMulti($namespace, array $keys) {
 
@@ -350,7 +424,7 @@ class ERCache extends \Memcached {
     /**
      * Delete all from a namespace
      *
-     * @param string $namespace If FALSE, all data are deleted
+     * @param string $namespace If false, all data are deleted
      */
     public function nsDeleteNamespaceKeys($namespace) {
 
@@ -429,25 +503,6 @@ class ERCache extends \Memcached {
     // -------------------------------------------------------------------------
 
     /**
-     * Check if a server is active
-     *
-     * @param string $host
-     * @param string $port
-     * @return boolean
-     */
-    private function _isServerActive($host, $port) {
-        $fp = @fsockopen($host, $port);
-        if ($fp) {
-            fclose($fp);
-            return TRUE;
-        }
-
-        return FALSE;
-    }
-
-    // -------------------------------------------------------------------------
-
-    /**
      * Get the key for storing all namespaces
      *
      * @return string
@@ -461,7 +516,7 @@ class ERCache extends \Memcached {
     /**
      * Get the namespaces list
      *
-     * @return array|FALSE
+     * @return array|false
      */
     private function _getNamespaces() {
         $namespaces = parent::get($this->_keyNamespaces());
@@ -481,7 +536,7 @@ class ERCache extends \Memcached {
         $namespaces = $this->_getNamespaces();
 
         // Set the namespace in the list
-        $namespaces[$namespace] = TRUE;
+        $namespaces[$namespace] = true;
 
         // Save
         parent::set($this->_keyNamespaces(), $namespaces);
@@ -492,9 +547,9 @@ class ERCache extends \Memcached {
     /**
      * Delete a namespace in the namespaces list
      *
-     * @param string|FALSE $namespace If FALSE, delete all
+     * @param string|false $namespace If false, delete all
      */
-    private function _delNamespaces($namespace = FALSE) {
+    private function _delNamespaces($namespace = false) {
 
         // Delete a namespace
         if ($namespace) {
@@ -530,7 +585,7 @@ class ERCache extends \Memcached {
      * Get all keys from a namespace
      *
      * @param string $namespace
-     * @return array|FALSE
+     * @return array|false
      */
     private function _getNamespaceKeys($namespace) {
         $keys = parent::get($this->_keyNamespaceKeys($namespace));
@@ -592,7 +647,7 @@ class ERCache extends \Memcached {
      *
      * @param string $namespace
      */
-    private function _delNamespaceKeys($namespace, $key = FALSE) {
+    private function _delNamespaceKeys($namespace, $key = false) {
 
         // Delete a key
         if ($key) {
@@ -630,7 +685,7 @@ class ERCache extends \Memcached {
      *
      * @param string $namespace
      * @param string $key
-     * @return mixed|FALSE
+     * @return mixed|false
      */
     private function _getItem($namespace, $key) {
         return parent::get($this->keyItem($namespace, $key));

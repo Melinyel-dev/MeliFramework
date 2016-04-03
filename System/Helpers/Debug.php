@@ -20,7 +20,7 @@ class Debug {
     public static function full($var){
         if ($GLOBALS['conf']['environment'] != "prod") {
             $debug = debug_backtrace();
-            echo '<p>&nbsp;</p><p><a href="#" onclick="$(this).parent().next(\'ol\').slideToggle(); return FALSE;"><strong>' . $debug[0]['file'] . ' </strong> l.' . $debug[0]['line'] . '</a></p>';
+            echo '<p>&nbsp;</p><p><a href="#" onclick="$(this).parent().next(\'ol\').slideToggle(); return false;"><strong>' . $debug[0]['file'] . ' </strong> l.' . $debug[0]['line'] . '</a></p>';
             echo '<ol style="display:none;">';
 
             foreach ($debug as $k => $v) {

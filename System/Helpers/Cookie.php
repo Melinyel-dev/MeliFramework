@@ -18,7 +18,7 @@ class Cookie {
         'prefix' => '',
         'domain' => '',
         'path'   => '/',
-        'secure' => FALSE
+        'secure' => false
     ];
 
     // -------------------------------------------------------------------------
@@ -37,12 +37,12 @@ class Cookie {
     /**
      * Returns a default configuration
      *
-     * @param string|NULL $key
+     * @param string|null $key
      * @param mixed $default
      * @return mixed
      */
-    public static function getConf($key = NULL, $default = NULL) {
-        if ($key === NULL) {
+    public static function getConf($key = null, $default = null) {
+        if ($key === null) {
             return self::$config;
         }
 
@@ -58,7 +58,7 @@ class Cookie {
      * @param mixed $default
      * @return mixed
      */
-    public static function get($name, $default = NULL, array $confCookie = []) {
+    public static function get($name, $default = null, array $confCookie = []) {
         $config = array_merge(self::$config, $confCookie);
         $key    = $config['prefix'] . $name;
         return isset($_COOKIE[$key]) ? $_COOKIE[$key] : $default;
@@ -71,10 +71,10 @@ class Cookie {
      *
      * @param string $name
      * @param mixed $value
-     * @param int|NULL $expire
+     * @param int|null $expire
      * @param array $confCookie
      */
-    public static function set($name, $value, $expire = NULL, array $confCookie = []) {
+    public static function set($name, $value, $expire = null, array $confCookie = []) {
 
         $config = array_merge(self::$config, $confCookie);
 
@@ -125,7 +125,7 @@ class Cookie {
      * @param array $confCookie
      */
     public static function delete($name, array $confCookie = []) {
-        return self::set($name, FALSE, NULL, $confCookie);
+        return self::set($name, false, null, $confCookie);
     }
 
     // -------------------------------------------------------------------------
